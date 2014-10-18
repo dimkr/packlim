@@ -1,0 +1,42 @@
+#!/bin/sh
+
+if [ 4 -ne $# ]
+then
+	echo "Usage: $0 DIR PRIVATE PUBLIC OUTPUT" 1>&2
+	exit 1
+fi
+
+comp="$(which lzip)"
+if [ -n "$comp" ]
+then
+	comp="$comp -9"
+else
+	comp="$(which clzip)"
+	if [ -n "$comp" ]
+	then
+		comp="$comp -9"
+	else
+		comp="$(which xz)"
+		if [ -n "$comp" ]
+		then
+			comp="$comp -9 -e"
+		else
+			echo "Warning: cannot find lzip, clzip or xz; falling back to " \
+                 "lzip compression." 1>&2
+			comp="gzip -9"
+		fi
+	fi
+fi
+
+# create a compressed tar archive from the directory contents
+tar="$(mktemp -u)"
+tar -C "$1" -c . | $comp > "$tar"
+cp -f "$tar" "$4"
+
+# append packlad's magic number (0x686a6b6c)
+echo -n "hjkl" >> "$4"
+
+# sign the archive using Ed25519 and append the 64-byte signature
+pkgsign "$2" "$3" "$tar" >> "$4"
+
+rm -f "$tar"

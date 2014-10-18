@@ -1,0 +1,108 @@
+                  _    _           _
+ _ __   __ _  ___| | _| | __ _  __| |
+| '_ \ / _` |/ __| |/ / |/ _` |/ _` |
+| |_) | (_| | (__|   <| | (_| | (_| |
+| .__/ \__,_|\___|_|\_\_|\__,_|\__,_|
+|_|
+
+Overview
+========
+
+packlad is a lightweight, permissively-licensed package manager for Linux
+(https://www.kernel.org/) distributions.
+
+IT'S UNDER HEAVY DEVELOPMENT and NOT READY FOR USE.
+
+It tries to combine:
+  - The speed and robustness of pacman (https://www.archlinux.org/pacman/)
+  - Digitally-signed packages
+  - Easy creation of repositories, as with createrepo
+    (http://createrepo.baseurl.org/) and PPM (http://bkhome.org/woof/ppm.htm)
+  - The "autoremove" feature of Apt (https://wiki.debian.org/Apt)
+  - The ability to extract PPM's (http://bkhome.org/woof/ppm.htm) PET packages
+    on any distribution (using standard command-line tools), despite of their
+    custom format
+
+packlad is the successor to packdude (https://github.com/dimkr/packdude). It's
+simpler, since it uses old-fashioned text files instead of SQLite
+(https://sqlite.org/) databases.
+
+In addition, it it's more secure, since it supports digitally-signed packages.
+
+Features
+========
+
+  - Package download and installation, with recursive dependencies resolution
+  - Package removal, with automatic cleanup of unneeded packages
+  - Support for multiple package repositories
+  - Support for digitally-signed packages, with quick verification
+
+Dependencies
+============
+
+packdude depends on:
+  - libarchive (http://libarchive.org/) with lzip
+    (http://www.nongnu.org/lzip/lzip.html), XZ (http://tukaani.org/xz/) and
+    gzip (https://www.gnu.org/software/gzip/) support
+  - libcurl (http://curl.haxx.se/)
+  - zlib (http://www.zlib.net/)
+  - ed25519 (bundled in the sources tree)
+
+Usage
+=====
+
+  - Build packlad using make.
+  - To create a package, place its files in a directory and run dir2pkg. The
+    keys you should use are the ones under libpkg/.
+  - Then, create a package list with lines in the following format:
+
+      packlad|1.0|A package manager|packlad-1.0.pkg|x86_64|libarchive curl zlib
+
+	The field meanings are self-explanatory.
+  - Upload the package and the package list to a server (which speaks any
+    protocol supported by libcurl). Make sure the package list is named
+    "pkg_list".
+  - Distribute packlad to the end-user. Make sure you keep the private key to
+    yourself.
+
+FAQ
+===
+
+  'packlad'? Are you serious?
+  ----------------------------
+
+Yes. It's like pacman (https://www.archlinux.org/pacman/) and packdude, but
+smaller and younger.
+
+  What's so bad about packdude?
+  -----------------------------
+
+  - It's complicated. I mean, the code.
+  - Databases are binary and cannot be edited by hand.
+  - packdude's repositories contain a database. This database is created using
+    a tool that converts a CSV file converted to a SQLite database. Keeping the
+    human-readable CSV file in sync with the database is simply annoying.
+  - It doesn't support signed packages.
+  - It doesn't allow the user when to update the package database.
+
+  What's good about packdude?
+  ---------------------------
+
+  - It was small and fast. Package installation was quick.
+  - The automatic cleanup feature worked amazingly well.
+  - Its package format was great. tar and XZ Utils handle archiving and
+    compression pretty well, so using existing technologiesw was a good choice.
+    Also, the package header was located after a XZ-compressed tar archive, so
+    it was possible to extract packdude's packages with xz and tar. That was
+    pretty convenient. This is definitely a keeper.
+
+Credits and Legal Information
+=============================
+
+packlad is licensed under a 2-clause BSD license, see COPYING for the license
+text. For a list of its authors and contributors, see AUTHORS.
+
+The bundled Ed25519 is public-domain code written by Orson Peters. It was taken
+from https://github.com/orlp/ed25519.
+
+The ASCII art logo at the top was made using FIGlet (http://www.figlet.org/).
