@@ -4,9 +4,9 @@
 #include "log.h"
 #include "dep.h"
 
-bool dep_foreach(const char *deps,
-                 bool (*cb)(const char *dep, void *arg),
-                 void *arg)
+bool for_each_dep(const char *deps,
+                  bool (*cb)(const char *dep, void *arg),
+                  void *arg)
 {
 	char *copy;
 	char *dep;
@@ -73,18 +73,20 @@ bool dep_queue(struct pkg_queue *queue,
 	if (NULL == copy)
 		goto end;
 
+	log_write(LOG_INFO, "Queueing %s for installation\n", copy);
+	if (false == pkgq_push(queue, copy)) {
+		goto free_copy;
+	}
+
 	log_write(LOG_INFO, "Resolving the dependencies of %s\n", copy);
 	params.queue = queue;
 	params.list = list;
 	params.root = (char *) root;
-	if (false == dep_foreach(entry.deps, dep_recurse, (void *) &params))
+	if (false == for_each_dep(entry.deps, dep_recurse, (void *) &params))
 		goto free_copy;
 
-	log_write(LOG_INFO, "Queueing %s for installation\n", copy);
-	if (true == pkgq_push(queue, copy)) {
-		ret = true;
-		goto end;
-	}
+	ret = true;
+	goto end;
 
 free_copy:
 	free(copy);
@@ -113,7 +115,7 @@ static bool depends_on(const struct pkg_entry *entry, void *arg)
 	if (0 == strcmp(entry->name, params->name))
 		return true;
 
-	(void) dep_foreach(entry->deps, dep_cmp, arg);
+	(void) for_each_dep(entry->deps, dep_cmp, arg);
 
 	if (true == params->result) {
 		log_write(LOG_DEBUG, "%s depends on %s\n", entry->name, params->name);
@@ -158,10 +160,10 @@ static bool if_unrequired(const struct pkg_entry *entry, void *arg)
 	return true;
 }
 
-bool unrequired_foreach(const char *root,
-                        bool (*cb)(const struct pkg_entry *entry,
-                                   void *arg),
-                        void *arg)
+bool for_each_unneeded_pkg(const char *root,
+                           bool (*cb)(const struct pkg_entry *entry,
+                                      void *arg),
+                           void *arg)
 {
 	struct unrequired_iter_params params;
 	unsigned int total;

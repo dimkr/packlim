@@ -9,5 +9,6 @@ enum log_levels {
 };
 
 void log_write(const int level, const char *format, ...);
+void log_set_min_level(const int level);
 
 #endif

@@ -1,5 +1,5 @@
-#include <libpkg/ops.h>
-#include <libpkg/dep.h>
+#include "../core/pkg_ops.h"
+#include "../core/dep.h"
 
 #include "cleanup.h"
 
@@ -10,5 +10,5 @@ static bool remove_unneeded(const struct pkg_entry *entry, void *arg)
 
 bool packlad_cleanup(const char *root)
 {
-	return unrequired_foreach(root, remove_unneeded, (void *) root);
+	return for_each_unneeded_pkg(root, remove_unneeded, (void *) root);
 }

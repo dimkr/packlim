@@ -1,13 +1,7 @@
-CC ?= cc
-CFLAGS ?= -O2 -pipe
-LDFLAGS ?= -s
+include ../Makefile.common
 
-CFLAGS += -std=gnu99 -Wall -pedantic -I..
-LDFLAGS += -L../ed25519
 LIBS = -led25519
 
-SRCS = $(wildcard *.c)
-OBJS = $(SRCS:.c=.o)
 PROG = keygen
 
 all: $(PROG)

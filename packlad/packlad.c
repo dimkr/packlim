@@ -5,14 +5,15 @@
 #include <sys/types.h>
 #include <pwd.h>
 
-#include <libpkg/pkgent.h>
+#include "../core/pkg_entry.h"
+#include "../core/log.h"
 
-#include "install.h"
-#include "remove.h"
-#include "update.h"
-#include "list.h"
+#include "../logic/install.h"
+#include "../logic/remove.h"
+#include "../logic/update.h"
+#include "../logic/list.h"
 
-#define USAGE "Usage: %s [-u] [-n] [-p PREFIX] [-u URL] -l|-q|-c|-f|-i|-r " \
+#define USAGE "Usage: %s [-d] [-u] [-s] [-n] [-p PREFIX] [-u URL] -l|-q|-c|-f|-i|-r " \
               "PACKAGE\n"
 #define REPO_ENVIRONMENT_VARIABLE "REPO"
 
@@ -35,17 +36,25 @@ int main(int argc, char *argv[]) {
 	const char *url = NULL;
 	int option;
 	int action = ACTION_INVALID;
+	bool check_sig = true;
 
-	/* parse the command-line */
 	do {
-		option = getopt(argc, argv, "unlqcf:u:i:r:p:");
+		option = getopt(argc, argv, "dusnlqcf:u:i:r:p:");
 		switch (option) {
+			case 'd':
+				log_set_min_level(LOG_DEBUG);
+				break;
+
 			case 'p':
 				root = optarg;
 				break;
 
 			case 'u':
 				action = ACTION_UPDATE;
+				break;
+
+			case 's':
+				check_sig = false;
 				break;
 
 			case 'r':
@@ -96,8 +105,12 @@ int main(int argc, char *argv[]) {
 					case ACTION_UPDATE:
 					case ACTION_LIST_AVAILABLE:
 						url = getenv(REPO_ENVIRONMENT_VARIABLE);
-						if (NULL == url)
-							goto help;
+						if (NULL == url) {
+							(void) fprintf(stderr,
+							               "%s: REPO is not set.\n",
+							               argv[0]);
+							return EXIT_FAILURE;
+						}
 						break;
 
 					case ACTION_INVALID:
@@ -124,7 +137,7 @@ int main(int argc, char *argv[]) {
 done:
 	switch (action) {
 		case ACTION_INSTALL:
-			if (false == packlad_install(package, root, url, reason))
+			if (false == packlad_install(package, root, url, reason, check_sig))
 				return EXIT_FAILURE;
 			break;
 

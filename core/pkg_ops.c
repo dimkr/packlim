@@ -7,7 +7,7 @@
 #include "tar.h"
 #include "flist.h"
 #include "log.h"
-#include "ops.h"
+#include "pkg_ops.h"
 
 static bool delete_file(const char *path, void *arg)
 {
@@ -40,7 +40,8 @@ static bool list_file(void *arg, const char *path)
 
 bool pkg_install(const char *path,
                  const struct pkg_entry *entry,
-                 const char *root)
+                 const char *root,
+                 const bool check_sig)
 {
 	char dir[PATH_MAX];
 	struct flist list;
@@ -52,7 +53,7 @@ bool pkg_install(const char *path,
 		goto end;
 
 	log_write(LOG_INFO, "Verifying %s\n", entry->fname);
-	if (false == pkg_verify(&pkg))
+	if (false == pkg_verify(&pkg, check_sig))
 		goto close_pkg;
 
 	(void) sprintf(dir, "%s"INST_DATA_DIR"/%s", root, entry->name);

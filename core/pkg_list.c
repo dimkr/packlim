@@ -3,13 +3,13 @@
 #include <string.h>
 
 #include "log.h"
-#include "pkglist.h"
+#include "pkg_list.h"
 
 bool pkglist_open(struct pkg_list *list, const char *root)
 {
 	char path[PATH_MAX];
 
-	(void) sprintf(path, "%s/var/packlad/pkglist", root);
+	(void) sprintf(path, "%s"PKG_LIST_PATH, root);
 
 	list->fh = fopen(path, "r");
 	if (NULL == list->fh)

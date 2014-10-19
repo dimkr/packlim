@@ -1,11 +1,11 @@
 include ../Makefile.common
 
-LIB = libed25519.a
+LIB = libpacklad-logic.a
 
 all: $(LIB)
 
 %.o: %.c
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) -c -o $@ $< $(CFLAGS) $(CURL_CFLAGS) $(LIBARCHIVE_CFLAGS) $(ZLIB_CFLAGS)
 
 $(LIB): $(OBJS)
 	ar rcs $@ $^

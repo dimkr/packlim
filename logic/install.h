@@ -3,11 +3,10 @@
 
 #	include <stdbool.h>
 
-#	define PKG_ARCHIVE_DIR VAR_DIR"/archive"
-
 bool packlad_install(const char *name,
                       const char *root,
                       const char *url,
-                      const char *reason);
+                      const char *reason,
+                      const bool check_sig);
 
 #endif

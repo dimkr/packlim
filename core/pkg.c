@@ -43,15 +43,24 @@ end:
 	return false;
 }
 
-bool pkg_verify(struct pkg *pkg)
+bool pkg_verify(struct pkg *pkg, const bool check_sig)
 {
-	if (PKG_MAGIC != ntohl(pkg->hdr->magic))
+	if (PKG_MAGIC != ntohl(pkg->hdr->magic)) {
+		log_write(LOG_ERR, "The package is invalid\n");
 		return false;
+	}
 
-	/* TODO: Remove this */
+	if (false == check_sig) {
+		log_write(LOG_WARN, "Skipping the digital signature verification\n");
+		return true;
+	}
+
+	if (false == sig_verify(pkg->hdr->sig, pkg->data, pkg->tar_size)) {
+		log_write(LOG_ERR, "The package digital signature is invalid\n");
+		return false;
+	}
+
 	return true;
-
-	return sig_verify(pkg->hdr->sig, pkg->data, pkg->tar_size);
 }
 
 void pkg_close(struct pkg *pkg)

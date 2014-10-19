@@ -1,9 +1,9 @@
-#ifndef _PKGQ_H_INCLUDED
-#	define _PKGQ_H_INCLUDED
+#ifndef _PKG_QUEUE_H_INCLUDED
+#	define _PKG_QUEUE_H_INCLUDED
 
 #	include <stdbool.h>
 
-#	include <compat/queue.h>
+#	include "../compat/queue.h"
 
 #	include <zlib.h>
 

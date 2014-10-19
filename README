@@ -27,7 +27,7 @@ packlad is the successor to packdude (https://github.com/dimkr/packdude). It's
 simpler, since it uses old-fashioned text files instead of SQLite
 (https://sqlite.org/) databases.
 
-In addition, it it's more secure, since it supports digitally-signed packages.
+In addition, it's more secure, since it supports digitally-signed packages.
 
 Features
 ========
@@ -36,11 +36,12 @@ Features
   - Package removal, with automatic cleanup of unneeded packages
   - Support for multiple package repositories
   - Support for digitally-signed packages, with quick verification
+  - Support for multiple compression algorithms
 
 Dependencies
 ============
 
-packdude depends on:
+packlad depends on:
   - libarchive (http://libarchive.org/) with lzip
     (http://www.nongnu.org/lzip/lzip.html), XZ (http://tukaani.org/xz/) and
     gzip (https://www.gnu.org/software/gzip/) support
@@ -52,18 +53,42 @@ Usage
 =====
 
   - Build packlad using make.
-  - To create a package, place its files in a directory and run dir2pkg. The
-    keys you should use are the ones under libpkg/.
+  - To create packages, place their files in directories and run dir2pkg for
+    each. The keys you should use are the ones under libpkg/.
   - Then, create a package list with lines in the following format:
 
       packlad|1.0|A package manager|packlad-1.0.pkg|x86_64|libarchive curl zlib
 
-	The field meanings are self-explanatory.
-  - Upload the package and the package list to a server (which speaks any
+    The field meanings are self-explanatory.
+  - Upload the packages and the package list to a server (which speaks any
     protocol supported by libcurl). Make sure the package list is named
     "pkg_list".
-  - Distribute packlad to the end-user. Make sure you keep the private key to
-    yourself.
+  - Distribute packlad to the end-user, with the repository URL under the "REPO"
+    environment variable. Make sure you keep the private key to yourself.
+
+Directory Structure
+===================
+
+  - "doc" contains documentation
+  - "compat" contains compatibility and portability code
+  - "ed25519" contains the Ed25519 digital signature library
+  - "keygen" contains a key generator that generates packlad's private and
+    public keys
+  - "pkgsign" contains a package signing tool
+  - "dir2pkg" contains a script that generates a signed package from a directory
+  - "core" contains packlad's core: low-level package manager building blocks
+  - "logic" contains packlad's high-level, complex operations, built using
+    multiple modules of the core
+  - "packlad" contains packlad itself
+
+TODO
+====
+
+  - A lock file, to disallow multiple instances running in parallel
+  - Design docs
+  - Automatic blackbox tests?
+  - Unit tests for low-level stuff
+  - Migrate RLSD from packdude to packlad
 
 FAQ
 ===
@@ -71,8 +96,8 @@ FAQ
   'packlad'? Are you serious?
   ----------------------------
 
-Yes. It's like pacman (https://www.archlinux.org/pacman/) and packdude, but
-smaller and younger.
+  Yes. It's like pacman (https://www.archlinux.org/pacman/) and packdude, but
+  smaller and younger.
 
   What's so bad about packdude?
   -----------------------------
@@ -80,10 +105,12 @@ smaller and younger.
   - It's complicated. I mean, the code.
   - Databases are binary and cannot be edited by hand.
   - packdude's repositories contain a database. This database is created using
-    a tool that converts a CSV file converted to a SQLite database. Keeping the
-    human-readable CSV file in sync with the database is simply annoying.
+    a tool that converts a CSV file to a SQLite database. Keeping the
+    human-readable CSV file in sync with the database is simply annoying and
+    error-prone.
   - It doesn't support signed packages.
   - It doesn't allow the user when to update the package database.
+  - It supports only XZ compression.
 
   What's good about packdude?
   ---------------------------

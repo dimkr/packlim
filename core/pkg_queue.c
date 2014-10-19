@@ -1,7 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "pkgq.h"
+#include "log.h"
+#include "pkg_queue.h"
 
 void pkgq_init(struct pkg_queue *queue)
 {
@@ -60,8 +61,14 @@ char *pkgq_pop(struct pkg_queue *queue)
 
 void pkgq_empty(struct pkg_queue *queue)
 {
+	char *name;
+
+	log_write(LOG_DEBUG, "Emptying the installation queue\n");
+
 	do {
-		if (NULL == pkgq_pop(queue))
+		name = pkgq_pop(queue);
+		if (NULL == name)
 			break;
+		free(name);
 	} while (1);
 }

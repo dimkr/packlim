@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "pkgent.h"
+#include "pkg_entry.h"
 #include "flist.h"
 
 bool flist_open(struct flist *list,

@@ -63,13 +63,13 @@ bool repo_fetch(struct repo *repo, const char *url, const char *path)
 	FILE *fh;
 	int ret = false;
 
-	log_write(LOG_INFO, "Fetching %s\n", url);
+	(void) snprintf(abs_url, sizeof(abs_url), "%s/%s", repo->url, url);
+	log_write(LOG_INFO, "Fetching %s\n", abs_url);
 
 	fh = fopen(path, "wb");
 	if (NULL == fh)
 		goto end;
 
-	(void) snprintf(abs_url, sizeof(abs_url), "%s/%s", repo->url, url);
 	if (CURLE_OK != curl_easy_setopt(repo->sess, CURLOPT_URL, abs_url))
 		goto delete_file;
 	if (CURLE_OK != curl_easy_setopt(repo->sess, CURLOPT_WRITEDATA, fh))

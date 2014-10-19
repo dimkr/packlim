@@ -1,6 +1,6 @@
-#include <libpkg/repo.h>
-#include <libpkg/pkglist.h>
-#include <libpkg/log.h>
+#include "../core/repo.h"
+#include "../core/pkg_list.h"
+#include "../core/log.h"
 
 bool packlad_update(const char *root, const char *url)
 {

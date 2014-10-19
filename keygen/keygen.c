@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include <ed25519/ed25519.h>
+#include "../ed25519/ed25519.h"
 
 static int write_key_h(const char *path,
                        const unsigned char *key,

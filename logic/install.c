@@ -1,20 +1,23 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
-#include <libpkg/pkglist.h>
-#include <libpkg/pkgent.h>
-#include <libpkg/pkgq.h>
-#include <libpkg/repo.h>
-#include <libpkg/dep.h>
-#include <libpkg/ops.h>
+#include "../core/pkg_list.h"
+#include "../core/pkg_entry.h"
+#include "../core/pkg_queue.h"
+#include "../core/repo.h"
+#include "../core/dep.h"
+#include "../core/pkg_ops.h"
+#include "../core/log.h"
 
 #include "cleanup.h"
 #include "install.h"
 
 bool packlad_install(const char *name,
-                      const char *root,
-                      const char *url,
-                      const char *reason)
+                     const char *root,
+                     const char *url,
+                     const char *reason,
+                     const bool check_sig)
 {
 	char path[PATH_MAX];
 	struct pkg_list list;
@@ -24,7 +27,6 @@ bool packlad_install(const char *name,
 	char *next;
 	bool ret = false;
 	bool error = false;
-	unsigned int i;
 
 	if (false == pkglist_open(&list, root))
 		goto end;
@@ -36,7 +38,8 @@ bool packlad_install(const char *name,
 	if (false == dep_queue(&q, &list, name, root))
 		goto close_repo;
 
-	i = 0;
+	log_write(LOG_INFO, "Processing the package installation queue\n");
+
 	do {
 		next = pkgq_pop(&q);
 		if (NULL == next) {
@@ -49,25 +52,26 @@ bool packlad_install(const char *name,
 
 		(void) sprintf(path, "%s"PKG_ARCHIVE_DIR"/%s", root, entry.fname);
 		if (false == repo_fetch(&repo, entry.fname, path)) {
+			log_write(LOG_INFO, "Aborting the installation of %s\n", name);
 			error = true;
 			goto free_next;
 		}
 
-		if (0 == i)
+		if (0 == strcmp(next, name))
 			entry.reason = (char *) reason;
 		else
 			entry.reason = (char *) INST_REASON_DEP;
-		if (false == pkg_install(path, &entry, root)) {
+		if (false == pkg_install(path, &entry, root, check_sig)) {
+			log_write(LOG_INFO, "Aborting the installation of %s\n", name);
 			error = true;
 			goto free_next;
 		}
-
-		++i;
 
 free_next:
 		free(next);
 	} while ((false == ret) && (false == error));
 
+	pkgq_empty(&q);
 	(void) packlad_cleanup(root);
 
 close_repo:

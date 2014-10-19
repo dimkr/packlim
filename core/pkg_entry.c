@@ -10,7 +10,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "pkgent.h"
+#include "pkg_entry.h"
 
 bool pkgent_register(const struct pkg_entry *entry, const char *root)
 {

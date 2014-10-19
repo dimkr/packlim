@@ -1,9 +1,7 @@
-#ifndef _PKGENT_H_INCLUDED
-#	define _PKGENT_H_INCLUDED
+#ifndef _PKG_ENTRY_H_INCLUDED
+#	define _PKG_ENTRY_H_INCLUDED
 
 #	include <stdbool.h>
-
-#	define INST_DATA_DIR VAR_DIR"/data"
 
 struct pkg_entry {
 	char buf[512];

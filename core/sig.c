@@ -1,4 +1,4 @@
-#include <ed25519/ed25519.h>
+#include "../ed25519/ed25519.h"
 
 #include "sig.h"
 

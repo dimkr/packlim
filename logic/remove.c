@@ -1,9 +1,9 @@
 #include <string.h>
 
-#include <libpkg/pkgent.h>
-#include <libpkg/dep.h>
-#include <libpkg/ops.h>
-#include <libpkg/log.h>
+#include "../core/pkg_entry.h"
+#include "../core/dep.h"
+#include "../core/pkg_ops.h"
+#include "../core/log.h"
 
 #include "cleanup.h"
 #include "remove.h"
@@ -13,12 +13,15 @@ bool packlad_remove(const char *name, const char *root)
 	struct pkg_entry entry;
 	bool ret = false;
 
-	if (false == pkgent_get(name, &entry, root))
+	if (false == pkgent_get(name, &entry, root)) {
+		log_write(LOG_ERR, "%s is not installed\n", name);
 		goto end;
+	}
 
 	if (0 != strcmp(INST_REASON_USER, entry.reason)) {
 		log_write(LOG_ERR,
 		          "%s cannot be removed; it is a %s package\n",
+		          name,
 		          entry.reason);
 		goto end;
 	}

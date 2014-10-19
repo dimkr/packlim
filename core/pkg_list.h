@@ -1,13 +1,10 @@
-#ifndef _PKGLIST_H_INCLUDED
-#	define _PKGLIST_H_INCLUDED
+#ifndef _PKG_LIST_H_INCLUDED
+#	define _PKG_LIST_H_INCLUDED
 
 #	include <stdio.h>
 #	include <stdbool.h>
 
-#	include "pkgent.h"
-
-#	define PKG_LIST_FILE_NAME "pkg_list"
-#	define PKG_LIST_PATH VAR_DIR"/"PKG_LIST_FILE_NAME
+#	include "pkg_entry.h"
 
 struct pkg_list {
 	FILE *fh;

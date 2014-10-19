@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <libpkg/pkglist.h>
-#include <libpkg/pkgent.h>
-#include <libpkg/dep.h>
-#include <libpkg/flist.h>
+#include "../core/pkg_list.h"
+#include "../core/pkg_entry.h"
+#include "../core/dep.h"
+#include "../core/flist.h"
+#include "../core/log.h"
 
 #include "list.h"
 
@@ -74,8 +75,10 @@ bool packlad_list_files(const char *name, const char *root)
 	struct flist list;
 	bool ret = false;
 
-	if (false == flist_open(&list, "r", name, root))
+	if (false == flist_open(&list, "r", name, root)) {
+		log_write(LOG_ERR, "%s is not installed\n", name);
 		goto end;
+	}
 
 	ret = flist_foreach(&list, root, list_file, NULL);
 
