@@ -9,10 +9,12 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <errno.h>
 
+#include "log.h"
 #include "pkg_entry.h"
 
-bool pkgent_register(const struct pkg_entry *entry, const char *root)
+bool pkg_entry_register(const struct pkg_entry *entry, const char *root)
 {
 	char path[PATH_MAX];
 	FILE *fh;
@@ -41,7 +43,7 @@ end:
 	return ret;
 }
 
-bool pkgent_unregister(const char *name, const char *root)
+bool pkg_entry_unregister(const char *name, const char *root)
 {
 	char path[PATH_MAX];
 
@@ -52,7 +54,7 @@ bool pkgent_unregister(const char *name, const char *root)
 	return true;
 }
 
-bool pkgent_parse(struct pkg_entry *entry)
+bool pkg_entry_parse(struct pkg_entry *entry)
 {
 	char *last;
 	ssize_t len;
@@ -60,32 +62,42 @@ bool pkgent_parse(struct pkg_entry *entry)
 	entry->name = entry->buf;
 
 	entry->ver = strchr(entry->name, '|');
-	if (NULL == entry->ver)
+	if (NULL == entry->ver) {
+		log_write(LOG_ERR, "The package entry lacks a version field\n");
 		goto invalid;
+	}
 	entry->ver[0] = '\0';
 	++entry->ver;
 
 	entry->desc = strchr(entry->ver, '|');
-	if (NULL == entry->desc)
+	if (NULL == entry->desc) {
+		log_write(LOG_ERR, "The package entry lacks a description field\n");
 		goto invalid;
+	}
 	entry->desc[0] = '\0';
 	++entry->desc;
 
 	entry->fname = strchr(entry->desc, '|');
-	if (NULL == entry->fname)
+	if (NULL == entry->fname) {
+		log_write(LOG_ERR, "The package entry lacks a file name field\n");
 		goto invalid;
+	}
 	entry->fname[0] = '\0';
 	++entry->fname;
 
 	entry->arch = strchr(entry->fname, '|');
-	if (NULL == entry->arch)
+	if (NULL == entry->arch) {
+		log_write(LOG_ERR, "The package entry lacks an architecture field\n");
 		goto invalid;
+	}
 	entry->arch[0] = '\0';
 	++entry->arch;
 
 	entry->deps = strchr(entry->arch, '|');
-	if (NULL == entry->deps)
+	if (NULL == entry->deps) {
+		log_write(LOG_ERR, "The package entry lacks a dependencies field\n");
 		goto invalid;
+	}
 	entry->deps[0] = '\0';
 	++entry->deps;
 
@@ -108,40 +120,50 @@ invalid:
 	return false;
 }
 
-bool pkgent_get(const char *name, struct pkg_entry *entry, const char *root)
+tristate_t pkg_entry_get(const char *name,
+                         struct pkg_entry *entry,
+                         const char *root)
 {
 	char path[PATH_MAX];
-	int fd;
 	ssize_t len;
-	bool ret = false;
+	int fd;
+	tristate_t ret = TSTATE_FATAL;
 
 	(void) sprintf(path, "%s"INST_DATA_DIR"/%s/entry", root, name);
 	fd = open(path, O_RDONLY);
-	if (-1 == fd)
+	if (-1 == fd) {
+		if (ENOENT == errno)
+			ret = TSTATE_ERROR;
 		goto end;
-
-	len = read(fd, (void *) entry->buf, sizeof(entry->buf) - 1);
-	if (0 < len) {
-		entry->buf[len] = '\0';
-		ret = pkgent_parse(entry);
 	}
 
+	len = read(fd, (void *) entry->buf, sizeof(entry->buf) - 1);
+	if (0 >= len)
+		goto close_file;
+
+	entry->buf[len] = '\0';
+	if (true == pkg_entry_parse(entry))
+		ret = TSTATE_OK;
+
+close_file:
 	(void) close(fd);
 
 end:
 	return ret;
 }
 
-bool pkgent_foreach(const char *root,
-                    bool (*cb)(const struct pkg_entry *entry, void *arg),
-                    void *arg)
+tristate_t pkg_entry_for_each(
+	                 const char *root,
+                     tristate_t (*cb)(const struct pkg_entry *entry, void *arg),
+                     void *arg)
 {
 	char path[PATH_MAX];
 	struct dirent name;
 	struct pkg_entry entry;
 	struct dirent *namep;
 	DIR *dir;
-	bool ret = false;
+	tristate_t ret = TSTATE_FATAL;
+	tristate_t cb_ret;
 
 	(void) sprintf(path, "%s"INST_DATA_DIR, root);
 
@@ -153,22 +175,33 @@ bool pkgent_foreach(const char *root,
 		if (0 != readdir_r(dir, &name, &namep))
 			break;
 		if (NULL == namep) {
-			ret = true;
+			ret = TSTATE_OK;
 			break;
 		}
 
+		/* ignore directories, relative paths and hidden files */
 		if (DT_DIR != namep->d_type)
 			continue;
 		if ('.' == namep->d_name[0])
 			continue;
 
-		if (false == pkgent_get(namep->d_name, &entry, root))
-			break;
+		switch (pkg_entry_get(namep->d_name, &entry, root)) {
+			/* if the package entry is missing, skip it */
+			case TSTATE_ERROR:
+				continue;
 
-		if (false == cb(&entry, arg))
+			case TSTATE_FATAL:
+				goto close_dir;
+		}
+
+		cb_ret = cb(&entry, arg);
+		if (TSTATE_OK != cb_ret) {
+			ret = cb_ret;
 			break;
+		}
 	} while (1);
 
+close_dir:
 	(void) closedir(dir);
 
 end:

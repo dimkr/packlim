@@ -25,41 +25,45 @@ bool packlad_list_avail(const char *root)
 	struct pkg_list list;
 	bool ret = false;
 
-	if (false == pkglist_open(&list, root))
+	if (false == pkg_list_open(&list, root))
 		goto end;
 
-	ret = pkglist_foreach(&list, list_entry);
+	if (TSTATE_OK == pkg_list_for_each(&list, list_entry))
+		ret = true;
 
-	pkglist_close(&list);
+	pkg_list_close(&list);
 
 end:
 	return ret;
 }
 
-static bool list_inst_entry(const struct pkg_entry *entry, void *arg)
+static tristate_t list_inst_entry(const struct pkg_entry *entry, void *arg)
 {
 	return list_entry(entry);
 }
 
 bool packlad_list_inst(const char *root)
 {
-	return pkgent_foreach(root, list_inst_entry, NULL);
+	return pkg_entry_for_each(root, list_inst_entry, NULL);
 }
 
-static bool list_removable(const struct pkg_entry *entry, void *arg)
+static tristate_t list_removable(const struct pkg_entry *entry, void *arg)
 {
 	if (0 != strcmp(INST_REASON_USER, entry->reason))
-		return true;
+		return TSTATE_OK;
 
-	if (true == pkg_required(entry->name, (const char *) arg))
-		return true;
+	if (TSTATE_OK != pkg_not_required(entry->name, (const char *) arg))
+		return TSTATE_OK;
 
-	return list_entry(entry);
+	if (true == list_entry(entry))
+		return TSTATE_OK;
+
+	return TSTATE_FATAL;
 }
 
 bool packlad_list_removable(const char *root)
 {
-	return pkgent_foreach(root, list_removable, (void *) root);
+	return pkg_entry_for_each(root, list_removable, (void *) root);
 }
 
 static bool list_file(const char *path, void *arg)
@@ -80,7 +84,7 @@ bool packlad_list_files(const char *name, const char *root)
 		goto end;
 	}
 
-	ret = flist_foreach(&list, root, list_file, NULL);
+	ret = flist_for_each(&list, root, list_file, NULL);
 
 	flist_close(&list);
 

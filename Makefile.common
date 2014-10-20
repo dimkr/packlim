@@ -1,6 +1,7 @@
 CC ?= cc
 CFLAGS ?= -O2 -pipe
 LDFLAGS ?= -s
+ARCH ?= $(shell uname -m)
 PKG_CONFIG ?= pkg-config
 VAR_DIR ?= /var/packlad
 
@@ -24,6 +25,7 @@ OBJS = $(SRCS:.c=.o)
 CFLAGS += -std=gnu99 \
           -Wall \
           -pedantic \
+          -DARCH=\"$(ARCH)\" \
           -DPKG_ARCHIVE_DIR=\"$(PKG_ARCHIVE_DIR)\" \
           -DPKG_LIST_FILE_NAME=\"$(PKG_LIST_FILE_NAME)\" \
           -DPKG_LIST_PATH=\"$(PKG_LIST_PATH)\" \

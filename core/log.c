@@ -27,7 +27,6 @@ void log_write(const int level, const char *format, ...)
 	(void) time(&now);
 	if (NULL == ctime_r(&now, text_now))
 		return;
-
 	text_now[strlen(text_now) - 1] = '\0';
 
 	if (LOG_ERR == level)
@@ -35,7 +34,8 @@ void log_write(const int level, const char *format, ...)
 	else
 		stream = stdout;
 
-	(void) fprintf(stream, "[%s](%-7s): ", text_now, g_levels[level]);
+	if (0 > fprintf(stream, "[%s](%-7s): ", text_now, g_levels[level]))
+		return;
 
 	va_start(args, format);
 	(void) vfprintf(stream, format, args);

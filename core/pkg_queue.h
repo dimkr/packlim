@@ -17,10 +17,11 @@ struct pkg_queue {
     LIST_HEAD(pkg_task_list, pkg_task) head;
 };
 
-void pkgq_init(struct pkg_queue *queue);
-bool pkgq_push(struct pkg_queue *queue, char *name);
-bool pkgq_contains(struct pkg_queue *queue, const char *name);
-char *pkgq_pop(struct pkg_queue *queue);
-void pkgq_empty(struct pkg_queue *queue);
+void pkg_queue_init(struct pkg_queue *queue);
+bool pkg_queue_push(struct pkg_queue *queue, char *name);
+bool pkg_queue_contains(struct pkg_queue *queue, const char *name);
+unsigned int pkg_queue_length(struct pkg_queue *queue);
+char *pkg_queue_pop(struct pkg_queue *queue);
+void pkg_queue_empty(struct pkg_queue *queue);
 
 #endif

@@ -13,9 +13,17 @@ bool packlad_remove(const char *name, const char *root)
 	struct pkg_entry entry;
 	bool ret = false;
 
-	if (false == pkgent_get(name, &entry, root)) {
-		log_write(LOG_ERR, "%s is not installed\n", name);
-		goto end;
+	switch (pkg_entry_get(name, &entry, root)) {
+		case TSTATE_ERROR:
+			log_write(LOG_WARN, "%s is not installed\n", name);
+			ret = true;
+			goto end;
+
+		case TSTATE_FATAL:
+			log_write(LOG_ERR,
+			          "Could not check whether %s is installed\n",
+			          name);
+			goto end;
 	}
 
 	if (0 != strcmp(INST_REASON_USER, entry.reason)) {
@@ -26,8 +34,10 @@ bool packlad_remove(const char *name, const char *root)
 		goto end;
 	}
 
-	if (true == pkg_required(name, root))
+	if (TSTATE_OK != pkg_not_required(name, root)) {
+		log_write(LOG_ERR, "%s cannot be removed\n", name);
 		goto end;
+	}
 
 	if (false == pkg_remove(name, root))
 		goto end;

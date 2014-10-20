@@ -25,36 +25,51 @@ bool packlad_install(const char *name,
 	struct pkg_queue q;
 	struct pkg_entry entry;
 	char *next;
+	unsigned int count;
 	bool ret = false;
 	bool error = false;
 
-	if (false == pkglist_open(&list, root))
+	if (false == pkg_list_open(&list, root))
 		goto end;
 
-	if (false == repo_open(&repo, url))
+	log_write(LOG_INFO, "Building the package queue\n");
+
+	pkg_queue_init(&q);
+	if (false == dep_queue(&q, &list, name, root))
 		goto close_list;
 
-	pkgq_init(&q);
-	if (false == dep_queue(&q, &list, name, root))
-		goto close_repo;
+	count = pkg_queue_length(&q);
+	if (0 == count) {
+		ret = true;
+		goto close_list;
+	}
 
-	log_write(LOG_INFO, "Processing the package installation queue\n");
+	if (false == repo_open(&repo, url))
+		goto empty_queue;
+
+	log_write(LOG_INFO, "Processing the package queue (%u packages)\n", count);
 
 	do {
-		next = pkgq_pop(&q);
+		next = pkg_queue_pop(&q);
 		if (NULL == next) {
 			ret = true;
 			goto free_next;
 		}
 
-		if (false == pkglist_get(&list, &entry, next))
+		if (TSTATE_OK != pkg_list_get(&list, &entry, next))
 			break;
 
 		(void) sprintf(path, "%s"PKG_ARCHIVE_DIR"/%s", root, entry.fname);
 		if (false == repo_fetch(&repo, entry.fname, path)) {
-			log_write(LOG_INFO, "Aborting the installation of %s\n", name);
 			error = true;
 			goto free_next;
+		}
+
+		if ((false == list.check_arch) && (0 != strcmp(ARCH, entry.arch))) {
+			log_write(LOG_WARN,
+			          "Installing a package for %s, while running on %s\n",
+			          entry.arch,
+			          ARCH);
 		}
 
 		if (0 == strcmp(next, name))
@@ -62,7 +77,7 @@ bool packlad_install(const char *name,
 		else
 			entry.reason = (char *) INST_REASON_DEP;
 		if (false == pkg_install(path, &entry, root, check_sig)) {
-			log_write(LOG_INFO, "Aborting the installation of %s\n", name);
+			log_write(LOG_ERR, "Cannot install %s\n", name);
 			error = true;
 			goto free_next;
 		}
@@ -71,14 +86,15 @@ free_next:
 		free(next);
 	} while ((false == ret) && (false == error));
 
-	pkgq_empty(&q);
 	(void) packlad_cleanup(root);
 
-close_repo:
 	repo_close(&repo);
 
+empty_queue:
+	pkg_queue_empty(&q);
+
 close_list:
-	pkglist_close(&list);
+	pkg_list_close(&list);
 
 end:
 	return ret;

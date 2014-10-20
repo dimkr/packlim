@@ -4,12 +4,12 @@
 #include "log.h"
 #include "pkg_queue.h"
 
-void pkgq_init(struct pkg_queue *queue)
+void pkg_queue_init(struct pkg_queue *queue)
 {
 	LIST_INIT(&queue->head);
 }
 
-bool pkgq_push(struct pkg_queue *queue, char *name)
+bool pkg_queue_push(struct pkg_queue *queue, char *name)
 {
 	struct pkg_task *task;
 
@@ -26,7 +26,7 @@ bool pkgq_push(struct pkg_queue *queue, char *name)
 	return true;
 }
 
-bool pkgq_contains(struct pkg_queue *queue, const char *name)
+bool pkg_queue_contains(struct pkg_queue *queue, const char *name)
 {
 	struct pkg_task *task;
 	uLong hash;
@@ -43,7 +43,18 @@ bool pkgq_contains(struct pkg_queue *queue, const char *name)
 	return false;
 }
 
-char *pkgq_pop(struct pkg_queue *queue)
+unsigned int pkg_queue_length(struct pkg_queue *queue)
+{
+	struct pkg_task *task;
+	unsigned int count = 0;
+
+	LIST_FOREACH(task, &queue->head, peers)
+		++count;
+
+	return count;
+}
+
+char *pkg_queue_pop(struct pkg_queue *queue)
 {
 	struct pkg_task *task;
 	char *name;
@@ -59,14 +70,14 @@ char *pkgq_pop(struct pkg_queue *queue)
 	return name;
 }
 
-void pkgq_empty(struct pkg_queue *queue)
+void pkg_queue_empty(struct pkg_queue *queue)
 {
 	char *name;
 
 	log_write(LOG_DEBUG, "Emptying the installation queue\n");
 
 	do {
-		name = pkgq_pop(queue);
+		name = pkg_queue_pop(queue);
 		if (NULL == name)
 			break;
 		free(name);

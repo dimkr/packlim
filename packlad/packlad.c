@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <limits.h>
 
 #include "../core/pkg_entry.h"
 #include "../core/log.h"
@@ -29,6 +30,7 @@ enum actions {
 };
 
 int main(int argc, char *argv[]) {
+	char abs_root[PATH_MAX];
 	struct passwd *user;
 	const char *root = "/";
 	char *reason = INST_REASON_USER;
@@ -46,7 +48,9 @@ int main(int argc, char *argv[]) {
 				break;
 
 			case 'p':
-				root = optarg;
+				if (NULL == realpath(optarg, abs_root))
+					goto help;
+				root = abs_root;
 				break;
 
 			case 'u':

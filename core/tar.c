@@ -104,7 +104,7 @@ bool tar_extract(unsigned char *data,
 		if (0 == strcmp("./", path))
 			continue;
 
-		if (0 != cb(arg, path))
+		if (false == cb(arg, path))
 			break;
 		if (ARCHIVE_OK != archive_write_header(out, entry)) {
 			log_write(LOG_ERR, "Failed to read a file header\n");

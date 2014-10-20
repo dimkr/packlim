@@ -11,7 +11,7 @@
 
 static bool delete_file(const char *path, void *arg)
 {
-	log_write(LOG_INFO, "Removing %s\n", path);
+	log_write(LOG_DEBUG, "Removing %s\n", path);
 
 	if (0 == unlink(path))
 		return true;
@@ -34,7 +34,7 @@ static bool delete_file(const char *path, void *arg)
 
 static bool list_file(void *arg, const char *path)
 {
-	log_write(LOG_INFO, "Extracting %s\n", path);
+	log_write(LOG_DEBUG, "Extracting %s\n", path);
 	return flist_add((struct flist *) arg, path);
 }
 
@@ -61,6 +61,7 @@ bool pkg_install(const char *path,
 	if (-1 == mkdir(dir, S_IRUSR | S_IWUSR)) {
 		if (EEXIST != errno)
 			goto close_pkg;
+		log_write(LOG_WARN, "%s already exists\n", dir);
 	}
 
 	log_write(LOG_DEBUG, "Creating a file list for %s\n", entry->name);
@@ -80,8 +81,8 @@ bool pkg_install(const char *path,
 	          "Registering %s as a %s package\n",
 	          entry->name,
 	          entry->reason);
-	if (false == pkgent_register(entry, root)) {
-		(void) flist_foreach_reverse(&list, root, delete_file, NULL);
+	if (false == pkg_entry_register(entry, root)) {
+		(void) flist_for_each_reverse(&list, root, delete_file, NULL);
 		if (true == flist_delete(&list))
 			(void) rmdir(dir);
 		goto close_flist;
@@ -111,7 +112,7 @@ bool pkg_remove(const char *name, const char *root)
 		goto end;
 
 	log_write(LOG_DEBUG, "Removing files installed by %s\n", name);
-	if (false == flist_foreach_reverse(&list, root, delete_file, NULL))
+	if (TSTATE_OK != flist_for_each_reverse(&list, root, delete_file, NULL))
 		goto close_list;
 
 	log_write(LOG_DEBUG, "Removing the file list of %s\n", name);
@@ -119,7 +120,7 @@ bool pkg_remove(const char *name, const char *root)
 		goto close_list;
 
 	log_write(LOG_INFO, "Unregistering %s\n", name);
-	if (false == pkgent_unregister(name, root))
+	if (false == pkg_entry_unregister(name, root))
 		goto close_list;
 
 	(void) sprintf(dir, "%s"INST_DATA_DIR"/%s", root, name);

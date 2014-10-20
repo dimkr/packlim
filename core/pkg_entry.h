@@ -3,6 +3,12 @@
 
 #	include <stdbool.h>
 
+#	include "types.h"
+
+#	define INST_REASON_DEP "dependency"
+#	define INST_REASON_CORE "core"
+#	define INST_REASON_USER "user"
+
 struct pkg_entry {
 	char buf[512];
 	char *name;
@@ -14,19 +20,18 @@ struct pkg_entry {
 	char *reason;
 };
 
-#	define INST_REASON_DEP "dependency"
-#	define INST_REASON_CORE "core"
-#	define INST_REASON_USER "user"
+bool pkg_entry_register(const struct pkg_entry *entry, const char *root);
+bool pkg_entry_unregister(const char *name, const char *root);
 
-bool pkgent_register(const struct pkg_entry *entry, const char *root);
-bool pkgent_unregister(const char *name, const char *root);
+bool pkg_entry_parse(struct pkg_entry *entry);
 
-bool pkgent_parse(struct pkg_entry *entry);
+tristate_t pkg_entry_get(const char *name,
+                         struct pkg_entry *entry,
+                         const char *root);
 
-bool pkgent_get(const char *name, struct pkg_entry *entry, const char *root);
-
-bool pkgent_foreach(const char *root,
-                    bool (*cb)(const struct pkg_entry *entry, void *arg),
-                    void *arg);
+tristate_t pkg_entry_for_each(
+	                 const char *root,
+                     tristate_t (*cb)(const struct pkg_entry *entry, void *arg),
+                     void *arg);
 
 #endif

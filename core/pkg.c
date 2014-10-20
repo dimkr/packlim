@@ -13,12 +13,12 @@ bool pkg_open(struct pkg *pkg, const char *path)
 {
 	struct stat stbuf;
 
+	if (-1 == stat(path, &stbuf))
+		goto error;
+
 	pkg->fd = open(path, O_RDONLY);
 	if (-1 == pkg->fd)
-		goto end;
-
-	if (-1 == fstat(pkg->fd, &stbuf))
-		goto close_pkg;
+		goto error;
 
 	pkg->size = (size_t) stbuf.st_size;
 	if (sizeof(struct pkg_header) >= pkg->size)
@@ -39,7 +39,7 @@ bool pkg_open(struct pkg *pkg, const char *path)
 close_pkg:
 	(void) close(pkg->fd);
 
-end:
+error:
 	return false;
 }
 

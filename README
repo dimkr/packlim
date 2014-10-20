@@ -88,7 +88,6 @@ TODO
   - Design docs
   - Automatic blackbox tests?
   - Unit tests for low-level stuff
-  - Migrate RLSD from packdude to packlad
 
 FAQ
 ===
@@ -111,6 +110,8 @@ FAQ
   - It doesn't support signed packages.
   - It doesn't allow the user when to update the package database.
   - It supports only XZ compression.
+  - It doesn't play nicely with luufs (https://github.com/dimkr/luufs), since
+    all the package data is contained in one file.
 
   What's good about packdude?
   ---------------------------

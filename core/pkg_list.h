@@ -4,20 +4,24 @@
 #	include <stdio.h>
 #	include <stdbool.h>
 
+#	include "types.h"
 #	include "pkg_entry.h"
+
+#	define PKG_ARCH_NONE "all"
 
 struct pkg_list {
 	FILE *fh;
+	bool check_arch;
 };
 
-bool pkglist_open(struct pkg_list *list, const char *root);
-void pkglist_close(struct pkg_list *list);
+bool pkg_list_open(struct pkg_list *list, const char *root);
+void pkg_list_close(struct pkg_list *list);
 
-bool pkglist_get(struct pkg_list *list,
-                 struct pkg_entry *entry,
-                 const char *name);
+tristate_t pkg_list_get(struct pkg_list *list,
+                        struct pkg_entry *entry,
+                        const char *name);
 
-bool pkglist_foreach(struct pkg_list *list,
-                     bool (*cb)(const struct pkg_entry *entry));
+tristate_t pkg_list_for_each(struct pkg_list *list,
+                             bool (*cb)(const struct pkg_entry *entry));
 
 #endif

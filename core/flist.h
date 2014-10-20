@@ -5,6 +5,8 @@
 #	include <stdio.h>
 #	include <stdbool.h>
 
+#	include "types.h"
+
 struct flist {
 	char path[PATH_MAX];
 	FILE *fh;
@@ -15,10 +17,10 @@ struct flines {
 	unsigned int count;
 };
 
-typedef bool (*flist_iter_t)(struct flist *list,
-                             const char *root,
-                             bool (*cb)(const char *path, void *arg),
-                             void *arg);
+typedef tristate_t (*flist_iter_t)(struct flist *list,
+                                   const char *root,
+                                   bool (*cb)(const char *path, void *arg),
+                                   void *arg);
 
 bool flist_open(struct flist *list,
                 const char *mode,
@@ -30,14 +32,14 @@ bool flist_add(struct flist *list, const char *path);
 
 bool flist_delete(struct flist *list);
 
-bool flist_foreach(struct flist *list,
-                   const char *root,
-                   bool (*cb)(const char *path, void *arg),
-                   void *arg);
+tristate_t flist_for_each(struct flist *list,
+                          const char *root,
+                          bool (*cb)(const char *path, void *arg),
+                          void *arg);
 
-bool flist_foreach_reverse(struct flist *list,
-                           const char *root,
-                           bool (*cb)(const char *path, void *arg),
-                           void *arg);
+tristate_t flist_for_each_reverse(struct flist *list,
+                                  const char *root,
+                                  bool (*cb)(const char *path, void *arg),
+                                  void *arg);
 
 #endif
