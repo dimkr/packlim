@@ -1,6 +1,7 @@
 DESTDIR ?=
 BIN_DIR ?= /bin
 DOC_DIR ?= /usr/share/doc
+MAN_DIR ?= /usr/share/man
 
 INSTALL = install -v
 

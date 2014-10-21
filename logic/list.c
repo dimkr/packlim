@@ -17,6 +17,21 @@ static bool list_entry(const struct pkg_entry *entry)
 	return true;
 }
 
+static bool list_if_not_installed(const struct pkg_entry *entry)
+{
+	struct pkg_entry temp;
+
+	switch (pkg_entry_get(entry->name, &temp)) {
+		case TSTATE_OK:
+			return true;
+
+		case TSTATE_ERROR:
+			return list_entry(entry);
+	}
+
+	return false;
+}
+
 bool packlad_list_avail(void)
 {
 	struct pkg_list list;
@@ -25,7 +40,7 @@ bool packlad_list_avail(void)
 	if (false == pkg_list_open(&list))
 		goto end;
 
-	if (TSTATE_OK == pkg_list_for_each(&list, list_entry))
+	if (TSTATE_OK == pkg_list_for_each(&list, list_if_not_installed))
 		ret = true;
 
 	pkg_list_close(&list);
@@ -36,7 +51,10 @@ end:
 
 static tristate_t list_inst_entry(const struct pkg_entry *entry, void *arg)
 {
-	return list_entry(entry);
+	if (false == list_entry(entry))
+		return TSTATE_FATAL;
+
+	return TSTATE_OK;
 }
 
 bool packlad_list_inst(void)

@@ -111,7 +111,6 @@ close_output:
 	archive_write_free(out);
 
 close_input:
-	(void) archive_read_close(in);
 	archive_read_free(in);
 
 end:

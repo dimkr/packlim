@@ -60,10 +60,14 @@ void repo_close(struct repo *repo)
 bool repo_fetch(struct repo *repo, const char *url, const char *path)
 {
 	char abs_url[1024];
+	int len;
 	FILE *fh;
 	int ret = false;
 
-	(void) snprintf(abs_url, sizeof(abs_url), "%s/%s", repo->url, url);
+	len = snprintf(abs_url, sizeof(abs_url), "%s/%s", repo->url, url);
+	if ((sizeof(abs_url) <= len) || (0 > len))
+		goto end;
+
 	log_write(LOG_INFO, "Fetching %s\n", abs_url);
 
 	fh = fopen(path, "wb");

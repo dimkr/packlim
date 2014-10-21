@@ -47,7 +47,19 @@ bool packlad_install(const char *name,
 	if (false == repo_open(&repo, url))
 		goto empty_queue;
 
-	log_write(LOG_INFO, "Processing the package queue (%u packages)\n", count);
+	switch (count) {
+		case 0:
+			goto close_repo;
+
+		case 1:
+			log_write(LOG_INFO, "Processing the package queue (one package)\n");
+			break;
+
+		default:
+			log_write(LOG_INFO,
+			          "Processing the package queue (%u packages)\n",
+			          count);
+	}
 
 	do {
 		next = pkg_queue_pop(&q);
@@ -86,6 +98,7 @@ free_next:
 
 	(void) packlad_cleanup();
 
+close_repo:
 	repo_close(&repo);
 
 empty_queue:

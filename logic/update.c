@@ -2,12 +2,12 @@
 #include "../core/pkg_list.h"
 #include "../core/log.h"
 
-bool packlad_update(const char *root, const char *url)
+bool packlad_update(const char *url)
 {
 	struct repo repo;
 	bool ret = false;
 
-	log_write(LOG_INFO, "Updating the package list\n");
+	log_write(LOG_INFO, "Updating the package list from %s\n", url);
 
 	if (false == repo_open(&repo, url))
 		goto end;
