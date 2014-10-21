@@ -129,9 +129,12 @@ bool pkg_remove(const char *name)
 	len = snprintf(dir, sizeof(dir), INST_DATA_DIR"/%s", name);
 	if ((sizeof(dir) <= len) || (0 > len))
 		goto close_list;
+
+	/* the file list must be closed before the directory is removed */
+	flist_close(&list);
 	log_write(LOG_DEBUG, "Removing %s\n", dir);
 	if (-1 == rmdir(dir))
-		goto close_list;
+		goto end;
 
 	log_write(LOG_INFO, "Successfully removed %s\n", name);
 	ret = true;

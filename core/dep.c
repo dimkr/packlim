@@ -164,7 +164,7 @@ static tristate_t if_unneeded(const struct pkg_entry *entry, void *arg)
 			return TSTATE_FATAL;
 	}
 
-	log_write(LOG_INFO, "%s is no longer required; cleaning up\n", entry->name);
+	log_write(LOG_INFO, "%s is no longer required\n", entry->name);
 	if (false == params->cb(entry, params->arg))
 		return TSTATE_ERROR;
 
