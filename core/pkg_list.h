@@ -7,14 +7,11 @@
 #	include "types.h"
 #	include "pkg_entry.h"
 
-#	define PKG_ARCH_NONE "all"
-
 struct pkg_list {
 	FILE *fh;
-	bool check_arch;
 };
 
-bool pkg_list_open(struct pkg_list *list, const char *root);
+bool pkg_list_open(struct pkg_list *list);
 void pkg_list_close(struct pkg_list *list);
 
 tristate_t pkg_list_get(struct pkg_list *list,

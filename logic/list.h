@@ -3,10 +3,10 @@
 
 #	include <stdbool.h>
 
-bool packlad_list_avail(const char *root);
-bool packlad_list_inst(const char *root);
-bool packlad_list_removable(const char *root);
+bool packlad_list_avail(void);
+bool packlad_list_inst(void);
+bool packlad_list_removable(void);
 
-bool packlad_list_files(const char *name, const char *root);
+bool packlad_list_files(const char *name);
 
 #endif

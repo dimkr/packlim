@@ -14,7 +14,6 @@
 #include "install.h"
 
 bool packlad_install(const char *name,
-                     const char *root,
                      const char *url,
                      const char *reason,
                      const bool check_sig)
@@ -26,16 +25,17 @@ bool packlad_install(const char *name,
 	struct pkg_entry entry;
 	char *next;
 	unsigned int count;
+	int len;
 	bool ret = false;
 	bool error = false;
 
-	if (false == pkg_list_open(&list, root))
+	if (false == pkg_list_open(&list))
 		goto end;
 
 	log_write(LOG_INFO, "Building the package queue\n");
 
 	pkg_queue_init(&q);
-	if (false == dep_queue(&q, &list, name, root))
+	if (false == dep_queue(&q, &list, name))
 		goto close_list;
 
 	count = pkg_queue_length(&q);
@@ -59,24 +59,22 @@ bool packlad_install(const char *name,
 		if (TSTATE_OK != pkg_list_get(&list, &entry, next))
 			break;
 
-		(void) sprintf(path, "%s"PKG_ARCHIVE_DIR"/%s", root, entry.fname);
-		if (false == repo_fetch(&repo, entry.fname, path)) {
+		len = snprintf(path, sizeof(path), PKG_ARCHIVE_DIR"/%s", entry.fname);
+		if ((sizeof(path) <= len) || (0 > len)) {
 			error = true;
 			goto free_next;
 		}
 
-		if ((false == list.check_arch) && (0 != strcmp(ARCH, entry.arch))) {
-			log_write(LOG_WARN,
-			          "Installing a package for %s, while running on %s\n",
-			          entry.arch,
-			          ARCH);
+		if (false == repo_fetch(&repo, entry.fname, path)) {
+			error = true;
+			goto free_next;
 		}
 
 		if (0 == strcmp(next, name))
 			entry.reason = (char *) reason;
 		else
 			entry.reason = (char *) INST_REASON_DEP;
-		if (false == pkg_install(path, &entry, root, check_sig)) {
+		if (false == pkg_install(path, &entry, check_sig)) {
 			log_write(LOG_ERR, "Cannot install %s\n", name);
 			error = true;
 			goto free_next;
@@ -86,7 +84,7 @@ free_next:
 		free(next);
 	} while ((false == ret) && (false == error));
 
-	(void) packlad_cleanup(root);
+	(void) packlad_cleanup();
 
 	repo_close(&repo);
 

@@ -3,6 +3,6 @@
 
 #	include <stdbool.h>
 
-bool packlad_cleanup(const char *root);
+bool packlad_cleanup(void);
 
 #endif

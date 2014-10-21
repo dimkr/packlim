@@ -18,14 +18,12 @@ struct flines {
 };
 
 typedef tristate_t (*flist_iter_t)(struct flist *list,
-                                   const char *root,
                                    bool (*cb)(const char *path, void *arg),
                                    void *arg);
 
 bool flist_open(struct flist *list,
                 const char *mode,
-                const char *name,
-                const char *root);
+                const char *name);
 void flist_close(struct flist *list);
 
 bool flist_add(struct flist *list, const char *path);
@@ -33,12 +31,10 @@ bool flist_add(struct flist *list, const char *path);
 bool flist_delete(struct flist *list);
 
 tristate_t flist_for_each(struct flist *list,
-                          const char *root,
                           bool (*cb)(const char *path, void *arg),
                           void *arg);
 
 tristate_t flist_for_each_reverse(struct flist *list,
-                                  const char *root,
                                   bool (*cb)(const char *path, void *arg),
                                   void *arg);
 

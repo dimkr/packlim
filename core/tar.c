@@ -42,19 +42,14 @@ static bool extract_file(struct archive *in, struct archive *out)
 
 bool tar_extract(unsigned char *data,
                  const size_t len,
-                 const char *dest,
                  const tar_cb_t cb,
                  void *arg)
 {
-	char cwd[PATH_MAX];
 	struct archive *in;
 	struct archive *out;
 	struct archive_entry *entry;
 	const char *path;
 	bool ret = false;
-
-	if (NULL == getcwd(cwd, sizeof(cwd)))
-		goto end;
 
 	in = archive_read_new();
 	if (NULL == in)
@@ -74,9 +69,6 @@ bool tar_extract(unsigned char *data,
 
 	if (0 != archive_read_open_memory(in, data, len))
 		goto close_output;
-
-	if (-1 == chdir(dest))
-		goto close_input;
 
 	do {
 		switch (archive_read_next_header(in, &entry)) {

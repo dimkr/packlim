@@ -5,10 +5,10 @@
 
 static bool remove_unneeded(const struct pkg_entry *entry, void *arg)
 {
-	return pkg_remove(entry->name, (const char *) arg);
+	return pkg_remove(entry->name);
 }
 
-bool packlad_cleanup(const char *root)
+bool packlad_cleanup(void)
 {
-	return for_each_unneeded_pkg(root, remove_unneeded, (void *) root);
+	return for_each_unneeded_pkg(remove_unneeded, NULL);
 }

@@ -14,13 +14,16 @@
 #include "log.h"
 #include "pkg_entry.h"
 
-bool pkg_entry_register(const struct pkg_entry *entry, const char *root)
+bool pkg_entry_register(const struct pkg_entry *entry)
 {
 	char path[PATH_MAX];
 	FILE *fh;
+	int len;
 	bool ret = false;
 
-	(void) sprintf(path, "%s"INST_DATA_DIR"/%s/entry", root, entry->name);
+	len = snprintf(path, sizeof(path), INST_DATA_DIR"/%s/entry", entry->name);
+	if ((sizeof(path) <= len) || (0 > len))
+		goto end;
 
 	fh = fopen(path, "w");
 	if (NULL == fh)
@@ -43,11 +46,15 @@ end:
 	return ret;
 }
 
-bool pkg_entry_unregister(const char *name, const char *root)
+bool pkg_entry_unregister(const char *name)
 {
 	char path[PATH_MAX];
+	int len;
 
-	(void) sprintf(path, "%s"INST_DATA_DIR"/%s/entry", root, name);
+	len = snprintf(path, sizeof(path), INST_DATA_DIR"/%s/entry", name);
+	if ((sizeof(path) <= len) || (0 > len))
+		return false;
+
 	if (-1 == unlink(path))
 		return false;
 
@@ -120,16 +127,18 @@ invalid:
 	return false;
 }
 
-tristate_t pkg_entry_get(const char *name,
-                         struct pkg_entry *entry,
-                         const char *root)
+tristate_t pkg_entry_get(const char *name, struct pkg_entry *entry)
 {
 	char path[PATH_MAX];
 	ssize_t len;
+	int plen;
 	int fd;
 	tristate_t ret = TSTATE_FATAL;
 
-	(void) sprintf(path, "%s"INST_DATA_DIR"/%s/entry", root, name);
+	plen = snprintf(path, sizeof(path), INST_DATA_DIR"/%s/entry", name);
+	if ((sizeof(path) <= plen) || (0 > plen))
+		goto end;
+
 	fd = open(path, O_RDONLY);
 	if (-1 == fd) {
 		if (ENOENT == errno)
@@ -153,11 +162,9 @@ end:
 }
 
 tristate_t pkg_entry_for_each(
-	                 const char *root,
                      tristate_t (*cb)(const struct pkg_entry *entry, void *arg),
                      void *arg)
 {
-	char path[PATH_MAX];
 	struct dirent name;
 	struct pkg_entry entry;
 	struct dirent *namep;
@@ -165,9 +172,7 @@ tristate_t pkg_entry_for_each(
 	tristate_t ret = TSTATE_FATAL;
 	tristate_t cb_ret;
 
-	(void) sprintf(path, "%s"INST_DATA_DIR, root);
-
-	dir = opendir(path);
+	dir = opendir(INST_DATA_DIR);
 	if (NULL == dir)
 		goto end;
 
@@ -185,7 +190,7 @@ tristate_t pkg_entry_for_each(
 		if ('.' == namep->d_name[0])
 			continue;
 
-		switch (pkg_entry_get(namep->d_name, &entry, root)) {
+		switch (pkg_entry_get(namep->d_name, &entry)) {
 			/* if the package entry is missing, skip it */
 			case TSTATE_ERROR:
 				continue;

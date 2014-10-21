@@ -10,7 +10,6 @@ typedef bool (*tar_cb_t)(void *arg, const char *path);
 
 bool tar_extract(unsigned char *data,
                  const size_t len,
-                 const char *dest,
                  const tar_cb_t cb,
                  void *arg);
 

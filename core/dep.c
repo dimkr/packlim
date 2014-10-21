@@ -43,7 +43,7 @@ static tristate_t dep_recurse(const char *dep, void *arg)
 {
 	struct dep_queue_params *params = (struct dep_queue_params *) arg;
 
-	if (true == dep_queue(params->queue, params->list, dep, params->root))
+	if (true == dep_queue(params->queue, params->list, dep))
 		return TSTATE_OK;
 
 	return TSTATE_FATAL;
@@ -51,8 +51,7 @@ static tristate_t dep_recurse(const char *dep, void *arg)
 
 bool dep_queue(struct pkg_queue *queue,
                struct pkg_list *list,
-               const char *name,
-               const char *root)
+               const char *name)
 {
 	struct pkg_entry entry;
 	struct dep_queue_params params;
@@ -63,7 +62,7 @@ bool dep_queue(struct pkg_queue *queue,
 		return true;
 	}
 
-	switch (pkg_entry_get(name, &entry, root)) {
+	switch (pkg_entry_get(name, &entry)) {
 		case TSTATE_OK:
 			log_write(LOG_WARN, "%s is already installed\n", name);
 			return true;
@@ -89,7 +88,6 @@ bool dep_queue(struct pkg_queue *queue,
 	log_write(LOG_DEBUG, "Resolving the dependencies of %s\n", copy);
 	params.queue = queue;
 	params.list = list;
-	params.root = (char *) root;
 	if (TSTATE_OK == for_each_dep(entry.deps, dep_recurse, (void *) &params))
 		return true;
 
@@ -133,9 +131,9 @@ end:
 	return ret;
 }
 
-tristate_t pkg_not_required(const char *name, const char *root)
+tristate_t pkg_not_required(const char *name)
 {
-	return pkg_entry_for_each(root, depends_on, (void *) name);
+	return pkg_entry_for_each(depends_on, (void *) name);
 }
 
 static tristate_t if_unneeded(const struct pkg_entry *entry, void *arg)
@@ -151,7 +149,7 @@ static tristate_t if_unneeded(const struct pkg_entry *entry, void *arg)
 		return TSTATE_OK;
 	}
 
-	switch (pkg_not_required(entry->name, params->root)) {
+	switch (pkg_not_required(entry->name)) {
 		case TSTATE_ERROR:
 			log_write(LOG_DEBUG,
 			          "Cannot remove %s; another package depends on it\n",
@@ -174,8 +172,7 @@ static tristate_t if_unneeded(const struct pkg_entry *entry, void *arg)
 	return TSTATE_OK;
 }
 
-tristate_t for_each_unneeded_pkg(const char *root,
-                                 bool (*cb)(const struct pkg_entry *entry,
+tristate_t for_each_unneeded_pkg(bool (*cb)(const struct pkg_entry *entry,
                                             void *arg),
                                  void *arg)
 {
@@ -187,12 +184,11 @@ tristate_t for_each_unneeded_pkg(const char *root,
 
 	params.cb = cb;
 	params.arg = arg;
-	params.root = (char *) root;
 	total = 0;
 
 	do {
 		params.removed = 0;
-		ret = pkg_entry_for_each(root, if_unneeded, (void *) &params);
+		ret = pkg_entry_for_each(if_unneeded, (void *) &params);
 		if (TSTATE_OK != ret)
 			return ret;
 

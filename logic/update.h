@@ -3,6 +3,6 @@
 
 #	include <stdbool.h>
 
-bool packlad_update(const char *root, const char *url);
+bool packlad_update(const char *url);
 
 #endif

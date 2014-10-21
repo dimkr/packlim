@@ -4,9 +4,8 @@
 #	include <stdbool.h>
 
 bool packlad_install(const char *name,
-                      const char *root,
-                      const char *url,
-                      const char *reason,
-                      const bool check_sig);
+                     const char *url,
+                     const char *reason,
+                     const bool check_sig);
 
 #endif

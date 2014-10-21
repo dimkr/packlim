@@ -9,10 +9,17 @@
 
 bool flist_open(struct flist *list,
                 const char *mode,
-                const char *name,
-                const char *root)
+                const char *name)
 {
-	(void) sprintf(list->path, "%s"INST_DATA_DIR"/%s/files", root, name);
+	int len;
+
+	len = snprintf(list->path,
+	               sizeof(list->path),
+	               INST_DATA_DIR"/%s/files",
+	               name);
+	if ((sizeof(list->path) <= len) || (0 > len))
+		return false;
+
 	list->fh = fopen(list->path, mode);
 	if (NULL == list->fh)
 		return false;
@@ -41,11 +48,9 @@ bool flist_delete(struct flist *list)
 	return true;
 }
 
-static tristate_t flist_for_each_internal(
-                                        struct flist *list,
-                                        const char *root,
-                                        bool (*cb)(const char *path, void *arg),
-                                        void *arg)
+tristate_t flist_for_each(struct flist *list,
+                          bool (*cb)(const char *path, void *arg),
+                          void *arg)
 {
 	char path[PATH_MAX];
 	size_t len;
@@ -73,38 +78,6 @@ static tristate_t flist_for_each_internal(
 	return ret;
 }
 
-static tristate_t wrap_iter(const flist_iter_t iter,
-                            struct flist *list,
-                            const char *root,
-                            bool (*cb)(const char *path, void *arg),
-                            void *arg)
-{
-	char wd[PATH_MAX];
-	tristate_t ret = TSTATE_FATAL;
-
-	if (NULL == getcwd(wd, sizeof(wd)))
-		goto end;
-
-	if (-1 == chdir(root))
-		goto end;
-
-	ret = iter(list, root, cb, arg);
-
-	if (-1 == chdir(wd))
-		ret = TSTATE_FATAL;
-
-end:
-	return ret;
-}
-
-tristate_t flist_for_each(struct flist *list,
-                          const char *root,
-                          bool (*cb)(const char *path, void *arg),
-                          void *arg)
-{
-	return wrap_iter(flist_for_each_internal, list, root, cb, arg);
-}
-
 static bool append_line(const char *path, void *arg)
 {
 	struct flines *lines = (struct flines *) arg;
@@ -127,11 +100,9 @@ static bool append_line(const char *path, void *arg)
 	return true;
 }
 
-static tristate_t flist_for_each_reverse_internal(
-                                        struct flist *list,
-                                        const char *root,
-                                        bool (*cb)(const char *path, void *arg),
-                                        void *arg)
+tristate_t flist_for_each_reverse(struct flist *list,
+                                  bool (*cb)(const char *path, void *arg),
+                                  void *arg)
 {
 	struct flines lines;
 	int i;
@@ -140,7 +111,7 @@ static tristate_t flist_for_each_reverse_internal(
 	lines.lines = NULL;
 	lines.count = 0;
 
-	if (TSTATE_OK != flist_for_each(list, root, append_line, (void *) &lines))
+	if (TSTATE_OK != flist_for_each(list, append_line, (void *) &lines))
 		goto end;
 
 	for (i = lines.count - 1; 0 <= i; --i) {
@@ -160,12 +131,4 @@ free_lines:
 
 end:
 	return ret;
-}
-
-tristate_t flist_for_each_reverse(struct flist *list,
-                                  const char *root,
-                                  bool (*cb)(const char *path, void *arg),
-                                  void *arg)
-{
-	return wrap_iter(flist_for_each_reverse_internal, list, root, cb, arg);
 }

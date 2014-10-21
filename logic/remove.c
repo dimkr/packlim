@@ -8,12 +8,12 @@
 #include "cleanup.h"
 #include "remove.h"
 
-bool packlad_remove(const char *name, const char *root)
+bool packlad_remove(const char *name)
 {
 	struct pkg_entry entry;
 	bool ret = false;
 
-	switch (pkg_entry_get(name, &entry, root)) {
+	switch (pkg_entry_get(name, &entry)) {
 		case TSTATE_ERROR:
 			log_write(LOG_WARN, "%s is not installed\n", name);
 			ret = true;
@@ -34,15 +34,15 @@ bool packlad_remove(const char *name, const char *root)
 		goto end;
 	}
 
-	if (TSTATE_OK != pkg_not_required(name, root)) {
+	if (TSTATE_OK != pkg_not_required(name)) {
 		log_write(LOG_ERR, "%s cannot be removed\n", name);
 		goto end;
 	}
 
-	if (false == pkg_remove(name, root))
+	if (false == pkg_remove(name))
 		goto end;
 
-	(void) packlad_cleanup(root);
+	(void) packlad_cleanup();
 
 	ret = true;
 

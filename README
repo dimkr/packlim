@@ -15,7 +15,7 @@ IT'S UNDER HEAVY DEVELOPMENT and NOT READY FOR USE.
 
 It tries to combine:
   - The speed and robustness of pacman (https://www.archlinux.org/pacman/)
-  - Digitally-signed packages
+  - Digitally-signed packages, as with major package managers, but without bloat
   - Easy creation of repositories, as with createrepo
     (http://createrepo.baseurl.org/) and PPM (http://bkhome.org/woof/ppm.htm)
   - The "autoremove" feature of Apt (https://wiki.debian.org/Apt)

@@ -40,12 +40,12 @@ static bool list_file(void *arg, const char *path)
 
 bool pkg_install(const char *path,
                  const struct pkg_entry *entry,
-                 const char *root,
                  const bool check_sig)
 {
 	char dir[PATH_MAX];
 	struct flist list;
 	struct pkg pkg;
+	int len;
 	bool ret = false;
 
 	log_write(LOG_INFO, "Opening %s\n", entry->fname);
@@ -56,7 +56,10 @@ bool pkg_install(const char *path,
 	if (false == pkg_verify(&pkg, check_sig))
 		goto close_pkg;
 
-	(void) sprintf(dir, "%s"INST_DATA_DIR"/%s", root, entry->name);
+	len = snprintf(dir, sizeof(dir), INST_DATA_DIR"/%s", entry->name);
+	if ((sizeof(dir) <= len) || (0 > len))
+		goto close_pkg;
+
 	log_write(LOG_DEBUG, "Creating %s\n", dir);
 	if (-1 == mkdir(dir, S_IRUSR | S_IWUSR)) {
 		if (EEXIST != errno)
@@ -65,13 +68,12 @@ bool pkg_install(const char *path,
 	}
 
 	log_write(LOG_DEBUG, "Creating a file list for %s\n", entry->name);
-	if (false == flist_open(&list, "w+", entry->name, root))
+	if (false == flist_open(&list, "w+", entry->name))
 		goto close_pkg;
 
-	log_write(LOG_DEBUG, "Extracting %s to %s\n", entry->fname, root);
+	log_write(LOG_DEBUG, "Extracting %s\n", entry->fname);
 	if (false == tar_extract(pkg.data,
 	                         pkg.tar_size,
-	                         root,
 	                         list_file,
 	                         (void *) &list))
 		goto close_flist;
@@ -81,8 +83,8 @@ bool pkg_install(const char *path,
 	          "Registering %s as a %s package\n",
 	          entry->name,
 	          entry->reason);
-	if (false == pkg_entry_register(entry, root)) {
-		(void) flist_for_each_reverse(&list, root, delete_file, NULL);
+	if (false == pkg_entry_register(entry)) {
+		(void) flist_for_each_reverse(&list, delete_file, NULL);
 		if (true == flist_delete(&list))
 			(void) rmdir(dir);
 		goto close_flist;
@@ -101,18 +103,19 @@ end:
 	return ret;
 }
 
-bool pkg_remove(const char *name, const char *root)
+bool pkg_remove(const char *name)
 {
 	char dir[PATH_MAX];
 	struct flist list;
+	int len;
 	bool ret = false;
 
 	log_write(LOG_DEBUG, "Opening the file list of %s\n", name);
-	if (false == flist_open(&list, "r", name, root))
+	if (false == flist_open(&list, "r", name))
 		goto end;
 
 	log_write(LOG_DEBUG, "Removing files installed by %s\n", name);
-	if (TSTATE_OK != flist_for_each_reverse(&list, root, delete_file, NULL))
+	if (TSTATE_OK != flist_for_each_reverse(&list, delete_file, NULL))
 		goto close_list;
 
 	log_write(LOG_DEBUG, "Removing the file list of %s\n", name);
@@ -120,10 +123,12 @@ bool pkg_remove(const char *name, const char *root)
 		goto close_list;
 
 	log_write(LOG_INFO, "Unregistering %s\n", name);
-	if (false == pkg_entry_unregister(name, root))
+	if (false == pkg_entry_unregister(name))
 		goto close_list;
 
-	(void) sprintf(dir, "%s"INST_DATA_DIR"/%s", root, name);
+	len = snprintf(dir, sizeof(dir), INST_DATA_DIR"/%s", name);
+	if ((sizeof(dir) <= len) || (0 > len))
+		goto close_list;
 	log_write(LOG_DEBUG, "Removing %s\n", dir);
 	if (-1 == rmdir(dir))
 		goto close_list;

@@ -3,6 +3,6 @@
 
 #	include <stdbool.h>
 
-bool packlad_remove(const char *name, const char *root);
+bool packlad_remove(const char *name);
 
 #endif

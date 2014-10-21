@@ -38,5 +38,10 @@ echo -n "hjkl" >> "$4"
 
 # sign the archive using Ed25519 and append the 64-byte signature
 pkgsign "$2" "$3" "$tar" >> "$4"
+if [ 0 -ne $? ]
+then
+	rm -f "$4"
+	exit 1
+fi
 
 rm -f "$tar"

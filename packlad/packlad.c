@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <pwd.h>
-#include <limits.h>
 
 #include "../core/pkg_entry.h"
 #include "../core/log.h"
@@ -14,8 +13,8 @@
 #include "../logic/update.h"
 #include "../logic/list.h"
 
-#define USAGE "Usage: %s [-d] [-u] [-s] [-n] [-p PREFIX] [-u URL] -l|-q|-c|-f|-i|-r " \
-              "PACKAGE\n"
+#define USAGE "Usage: %s [-d] [-u] [-s] [-n] [-p PREFIX] [-u URL] " \
+              "-l|-q|-c|-f|-i|-r PACKAGE\n"
 #define REPO_ENVIRONMENT_VARIABLE "REPO"
 
 enum actions {
@@ -29,8 +28,13 @@ enum actions {
 	ACTION_INVALID        = 7
 };
 
+__attribute__((noreturn)) static void show_help(const char *prog)
+{
+	(void) fprintf(stderr, USAGE, prog);
+	exit(EXIT_FAILURE);
+}
+
 int main(int argc, char *argv[]) {
-	char abs_root[PATH_MAX];
 	struct passwd *user;
 	const char *root = "/";
 	char *reason = INST_REASON_USER;
@@ -39,6 +43,7 @@ int main(int argc, char *argv[]) {
 	int option;
 	int action = ACTION_INVALID;
 	bool check_sig = true;
+	bool status = false;
 
 	do {
 		option = getopt(argc, argv, "dusnlqcf:u:i:r:p:");
@@ -48,9 +53,7 @@ int main(int argc, char *argv[]) {
 				break;
 
 			case 'p':
-				if (NULL == realpath(optarg, abs_root))
-					goto help;
-				root = abs_root;
+				root = optarg;
 				break;
 
 			case 'u':
@@ -93,92 +96,94 @@ int main(int argc, char *argv[]) {
 				break;
 
 			case (-1):
-				switch (action) {
-					case ACTION_REMOVE:
-					case ACTION_LIST_FILES:
-						if (NULL == package)
-							goto help;
-						break;
-
-					case ACTION_INSTALL:
-						if (NULL == package)
-							goto help;
-
-						/* fall-through */
-
-					case ACTION_UPDATE:
-					case ACTION_LIST_AVAILABLE:
-						url = getenv(REPO_ENVIRONMENT_VARIABLE);
-						if (NULL == url) {
-							(void) fprintf(stderr,
-							               "%s: REPO is not set.\n",
-							               argv[0]);
-							return EXIT_FAILURE;
-						}
-						break;
-
-					case ACTION_INVALID:
-						goto help;
-				}
-
-				if (0 != geteuid()) {
-					user = getpwuid(0);
-					if (NULL != user)
-						(void) fprintf(stderr,
-						               "%s: must run as %s.\n",
-						               argv[0],
-						               user->pw_name);
-					return EXIT_FAILURE;
-				}
-
-				goto done;
+				goto check_sanity;
 
 			default:
-				goto help;
+				show_help(argv[0]);
 		}
 	} while (1);
 
-done:
+check_sanity:
+	switch (action) {
+		case ACTION_REMOVE:
+		case ACTION_LIST_FILES:
+			if (NULL == package)
+				show_help(argv[0]);
+			break;
+
+		case ACTION_INSTALL:
+			if (NULL == package)
+				show_help(argv[0]);
+
+			/* fall-through */
+
+		case ACTION_UPDATE:
+		case ACTION_LIST_AVAILABLE:
+			url = getenv(REPO_ENVIRONMENT_VARIABLE);
+			if (NULL == url) {
+				(void) fprintf(stderr,
+				               "%s: REPO is not set.\n",
+				               argv[0]);
+				goto end;
+			}
+			break;
+
+		case ACTION_INVALID:
+			show_help(argv[0]);
+	}
+
+	if (0 != geteuid()) {
+		user = getpwuid(0);
+		if (NULL != user) {
+			(void) fprintf(stderr,
+			               "%s: must run as %s.\n",
+			               argv[0],
+			               user->pw_name);
+		}
+		goto end;
+	}
+
+	if (-1 == chdir(root)) {
+		(void) fprintf(stderr,
+		               "%s: cannot change the working directory to %s.\n",
+		               argv[0],
+		               root);
+		goto end;
+	}
+
 	switch (action) {
 		case ACTION_INSTALL:
-			if (false == packlad_install(package, root, url, reason, check_sig))
-				return EXIT_FAILURE;
+			status = packlad_install(package, url, reason, check_sig);
 			break;
 
 		case ACTION_REMOVE:
-			if (false == packlad_remove(package, root))
-				return EXIT_FAILURE;
+			status = packlad_remove(package);
 			break;
 
 		case ACTION_LIST_INSTALLED:
-			if (false == packlad_list_inst(root))
-				return EXIT_FAILURE;
+			status = packlad_list_inst();
 			break;
 
 		case ACTION_LIST_AVAILABLE:
-			if (false == packlad_list_avail(root))
-				return EXIT_FAILURE;
+			status = packlad_list_avail();
 			break;
 
 		case ACTION_LIST_REMOVABLE:
-			if (false == packlad_list_removable(root))
-				return EXIT_FAILURE;
+			status = packlad_list_removable();
 			break;
 
 		case ACTION_LIST_FILES:
-			if (false == packlad_list_files(root, package))
-				return EXIT_FAILURE;
+			status = packlad_list_files(package);
 			break;
 
 		case ACTION_UPDATE:
-			if (false == packlad_update(root, url))
-				return EXIT_FAILURE;
+			status = packlad_update(url);
 			break;
 	}
 
-	return EXIT_SUCCESS;
+end:
+	if (false == status)
+		return EXIT_FAILURE;
 
-help:
-	(void) fprintf(stderr, USAGE, argv[0]);
-	return EXIT_FAILURE;
+	return EXIT_SUCCESS;
 }

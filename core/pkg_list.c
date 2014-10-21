@@ -5,20 +5,11 @@
 #include "log.h"
 #include "pkg_list.h"
 
-bool pkg_list_open(struct pkg_list *list, const char *root)
+bool pkg_list_open(struct pkg_list *list)
 {
-	char path[PATH_MAX];
-
-	(void) sprintf(path, "%s"PKG_LIST_PATH, root);
-
-	list->fh = fopen(path, "r");
+	list->fh = fopen(PKG_LIST_PATH, "r");
 	if (NULL == list->fh)
 		return false;
-
-	if (0 == strcmp("/", root))
-		list->check_arch = true;
-	else
-		list->check_arch = false;
 
 	return true;
 }
@@ -53,12 +44,6 @@ tristate_t pkg_list_get(struct pkg_list *list,
 		if (false == pkg_entry_parse(entry)) {
 			log_write(LOG_DEBUG, "Failed to parse the package list\n");
 			break;
-		}
-
-		if (true == list->check_arch) {
-			if ((0 != strcmp(ARCH, entry->arch) &&
-			    (0 != strcmp(PKG_ARCH_NONE, entry->arch))))
-				continue;
 		}
 
 		if (0 == strcmp(name, entry->name)) {

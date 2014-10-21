@@ -10,25 +10,21 @@
 struct dep_queue_params {
 	struct pkg_queue *queue;
 	struct pkg_list *list;
-	char *root;
 };
 
 struct unneeded_iter_params {
 	bool (*cb)(const struct pkg_entry *entry, void *arg);
 	void *arg;
-	char *root;
 	unsigned int removed;
 };
 
 bool dep_queue(struct pkg_queue *queue,
                struct pkg_list *list,
-               const char *name,
-               const char *root);
+               const char *name);
 
-tristate_t pkg_not_required(const char *name, const char *root);
+tristate_t pkg_not_required(const char *name);
 
-tristate_t for_each_unneeded_pkg(const char *root,
-                                 bool (*cb)(const struct pkg_entry *entry,
+tristate_t for_each_unneeded_pkg(bool (*cb)(const struct pkg_entry *entry,
                                             void *arg),
                                  void *arg);
 

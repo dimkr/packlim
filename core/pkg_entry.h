@@ -20,17 +20,14 @@ struct pkg_entry {
 	char *reason;
 };
 
-bool pkg_entry_register(const struct pkg_entry *entry, const char *root);
-bool pkg_entry_unregister(const char *name, const char *root);
+bool pkg_entry_register(const struct pkg_entry *entry);
+bool pkg_entry_unregister(const char *name);
 
 bool pkg_entry_parse(struct pkg_entry *entry);
 
-tristate_t pkg_entry_get(const char *name,
-                         struct pkg_entry *entry,
-                         const char *root);
+tristate_t pkg_entry_get(const char *name, struct pkg_entry *entry);
 
 tristate_t pkg_entry_for_each(
-	                 const char *root,
                      tristate_t (*cb)(const struct pkg_entry *entry, void *arg),
                      void *arg);
 
