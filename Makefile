@@ -12,7 +12,7 @@ all: dir2pkg/dir2pkg packlad/packlad
 ed25519/libed25519.a:
 	cd ed25519; $(MAKE)
 
-keys/pub_key: ed25519/libed25519.a
+keys: ed25519/libed25519.a
 	cd keys; $(MAKE)
 
 core/libpacklad-core.a: ed25519/libed25519.a keys/pub_key

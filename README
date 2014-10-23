@@ -47,12 +47,23 @@ packlad depends on:
   - zlib (http://www.zlib.net/)
   - ed25519 (bundled in the sources tree)
 
+Building
+========
+
+To generate a key pair:
+  make keys
+
+To build packlad:
+  make
+
+To create packages, use dir2pkg with the keys under keys/.
+
 Usage
 =====
 
   - Build packlad using make.
   - To create packages, place their files in directories and run dir2pkg for
-    each. The keys you should use are the ones under libpkg/.
+    each. The keys you should use are the ones under keys/.
   - Then, create a package list with lines in the following format:
 
       packlad|1.0|A package manager|packlad-1.0.pkg|x86_64|libarchive curl zlib
