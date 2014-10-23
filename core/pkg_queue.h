@@ -3,12 +3,14 @@
 
 #	include <stdbool.h>
 
+#	include "pkg_entry.h"
+
 #	include "../compat/queue.h"
 
 #	include <zlib.h>
 
 struct pkg_task {
-	char *name;
+	struct pkg_entry *entry;
 	uLong hash;
 	LIST_ENTRY(pkg_task) peers;
 };
@@ -18,10 +20,10 @@ struct pkg_queue {
 };
 
 void pkg_queue_init(struct pkg_queue *queue);
-bool pkg_queue_push(struct pkg_queue *queue, char *name);
+bool pkg_queue_push(struct pkg_queue *queue, struct pkg_entry *entry);
 bool pkg_queue_contains(struct pkg_queue *queue, const char *name);
 unsigned int pkg_queue_length(struct pkg_queue *queue);
-char *pkg_queue_pop(struct pkg_queue *queue);
+struct pkg_entry *pkg_queue_pop(struct pkg_queue *queue);
 void pkg_queue_empty(struct pkg_queue *queue);
 
 #endif

@@ -53,49 +53,56 @@ bool dep_queue(struct pkg_queue *queue,
                struct pkg_list *list,
                const char *name)
 {
-	struct pkg_entry entry;
+	struct pkg_entry *entry;
 	struct dep_queue_params params;
-	char *copy;
+	bool ret = false;
 
 	if (true == pkg_queue_contains(queue, name)) {
 		log_write(LOG_DEBUG, "%s is already queued for installation\n", name);
-		return true;
+		ret = true;
+		goto end;
 	}
 
-	switch (pkg_entry_get(name, &entry)) {
+	entry = (struct pkg_entry *) malloc(sizeof(struct pkg_entry));
+	if (NULL == entry)
+		goto end;
+
+	switch (pkg_entry_get(name, entry)) {
 		case TSTATE_OK:
 			log_write(LOG_WARN, "%s is already installed\n", name);
-			return true;
+			ret = true;
+			goto free_entry;
 
 		case TSTATE_FATAL:
 			log_write(LOG_ERR,
 			          "Failed to check whether %s is already installed\n",
 			          name);
-			return false;
+			goto free_entry;
 	}
 
-	if (TSTATE_OK != pkg_list_get(list, &entry, name))
-		goto error;
+	if (TSTATE_OK != pkg_list_get(list, entry, name))
+		goto free_entry;
 
-	copy = strdup(name);
-	if (NULL == copy)
-		goto error;
+	log_write(LOG_INFO, "Queueing %s for installation\n", entry->name);
+	if (false == pkg_queue_push(queue, entry))
+		goto empty_queue;
 
-	log_write(LOG_INFO, "Queueing %s for installation\n", copy);
-	if (false == pkg_queue_push(queue, copy))
-		goto free_copy;
-
-	log_write(LOG_DEBUG, "Resolving the dependencies of %s\n", copy);
+	log_write(LOG_DEBUG, "Resolving the dependencies of %s\n", entry->name);
 	params.queue = queue;
 	params.list = list;
-	if (TSTATE_OK == for_each_dep(entry.deps, dep_recurse, (void *) &params))
-		return true;
+	if (TSTATE_OK == for_each_dep(entry->deps, dep_recurse, (void *) &params)) {
+		ret = true;
+		goto end;
+	}
 
-free_copy:
-	free(copy);
+empty_queue:
+	pkg_queue_empty(queue);
 
-error:
-	return false;
+free_entry:
+	free(entry);
+
+end:
+	return ret;
 }
 
 static tristate_t dep_cmp(const char *dep, void *arg)

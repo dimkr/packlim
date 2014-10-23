@@ -9,7 +9,7 @@ void pkg_queue_init(struct pkg_queue *queue)
 	LIST_INIT(&queue->head);
 }
 
-bool pkg_queue_push(struct pkg_queue *queue, char *name)
+bool pkg_queue_push(struct pkg_queue *queue, struct pkg_entry *entry)
 {
 	struct pkg_task *task;
 
@@ -17,10 +17,10 @@ bool pkg_queue_push(struct pkg_queue *queue, char *name)
 	if (NULL == task)
 		return false;
 
-	task->name = name;
+	task->entry = entry;
 	task->hash = crc32(crc32(0L, Z_NULL, 0),
-	                   (const Bytef *) task->name,
-	                   (uInt) strlen(task->name));
+	                   (const Bytef *) task->entry->name,
+	                   (uInt) strlen(task->entry->name));
 	LIST_INSERT_HEAD(&queue->head, task, peers);
 
 	return true;
@@ -54,32 +54,32 @@ unsigned int pkg_queue_length(struct pkg_queue *queue)
 	return count;
 }
 
-char *pkg_queue_pop(struct pkg_queue *queue)
+struct pkg_entry *pkg_queue_pop(struct pkg_queue *queue)
 {
 	struct pkg_task *task;
-	char *name;
+	struct pkg_entry *entry;
 
 	task = LIST_FIRST(&queue->head);
 	if (NULL == task)
 		return NULL;
 
-	name = task->name;
+	entry = task->entry;
 	LIST_REMOVE(task, peers);
 	free(task);
 
-	return name;
+	return entry;
 }
 
 void pkg_queue_empty(struct pkg_queue *queue)
 {
-	char *name;
+	struct pkg_entry *entry;
 
 	log_write(LOG_DEBUG, "Emptying the installation queue\n");
 
 	do {
-		name = pkg_queue_pop(queue);
-		if (NULL == name)
+		entry = pkg_queue_pop(queue);
+		if (NULL == entry)
 			break;
-		free(name);
+		free(entry);
 	} while (1);
 }

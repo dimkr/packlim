@@ -133,11 +133,11 @@ bool pkg_remove(const char *name)
 	/* the file list must be closed before the directory is removed */
 	flist_close(&list);
 	log_write(LOG_DEBUG, "Removing %s\n", dir);
-	if (-1 == rmdir(dir))
-		goto end;
-
-	log_write(LOG_INFO, "Successfully removed %s\n", name);
-	ret = true;
+	if (0 == rmdir(dir)) {
+		log_write(LOG_INFO, "Successfully removed %s\n", name);
+		ret = true;
+	}
+	goto end;
 
 close_list:
 	flist_close(&list);

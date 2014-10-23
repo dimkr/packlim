@@ -22,8 +22,7 @@ bool packlad_install(const char *name,
 	struct pkg_list list;
 	struct repo repo;
 	struct pkg_queue q;
-	struct pkg_entry entry;
-	char *next;
+	struct pkg_entry *entry;
 	unsigned int count;
 	int len;
 	bool ret = false;
@@ -62,38 +61,35 @@ bool packlad_install(const char *name,
 	}
 
 	do {
-		next = pkg_queue_pop(&q);
-		if (NULL == next) {
+		entry = pkg_queue_pop(&q);
+		if (NULL == entry) {
 			ret = true;
-			goto free_next;
+			goto free_entry;
 		}
 
-		if (TSTATE_OK != pkg_list_get(&list, &entry, next))
-			break;
-
-		len = snprintf(path, sizeof(path), PKG_ARCHIVE_DIR"/%s", entry.fname);
+		len = snprintf(path, sizeof(path), PKG_ARCHIVE_DIR"/%s", entry->fname);
 		if ((sizeof(path) <= len) || (0 > len)) {
 			error = true;
-			goto free_next;
+			goto free_entry;
 		}
 
-		if (false == repo_fetch(&repo, entry.fname, path)) {
+		if (false == repo_fetch(&repo, entry->fname, path)) {
 			error = true;
-			goto free_next;
+			goto free_entry;
 		}
 
-		if (0 == strcmp(next, name))
-			entry.reason = (char *) reason;
+		if (0 == strcmp(entry->name, name))
+			entry->reason = (char *) reason;
 		else
-			entry.reason = (char *) INST_REASON_DEP;
-		if (false == pkg_install(path, &entry, check_sig)) {
+			entry->reason = (char *) INST_REASON_DEP;
+		if (false == pkg_install(path, entry, check_sig)) {
 			log_write(LOG_ERR, "Cannot install %s\n", name);
 			error = true;
-			goto free_next;
+			goto free_entry;
 		}
 
-free_next:
-		free(next);
+free_entry:
+		free(entry);
 	} while ((false == ret) && (false == error));
 
 	(void) packlad_cleanup();

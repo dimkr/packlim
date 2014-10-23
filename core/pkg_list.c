@@ -8,8 +8,10 @@
 bool pkg_list_open(struct pkg_list *list)
 {
 	list->fh = fopen(PKG_LIST_PATH, "r");
-	if (NULL == list->fh)
+	if (NULL == list->fh) {
+		log_write(LOG_ERR, "Failed to open the package list\n");
 		return false;
+	}
 
 	return true;
 }
