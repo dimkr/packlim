@@ -37,4 +37,4 @@ CFLAGS += -std=gnu99 \
           -DPUB_KEY_PATH=\"$(PUB_KEY_PATH)\" \
           -DLOCK_FILE_PATH=\"$(LOCK_FILE_PATH)\"
 
-LDFLAGS += -L../logic -L../core -L../ed25519
+LDFLAGS += -L../logic -L../core

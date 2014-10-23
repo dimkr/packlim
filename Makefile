@@ -9,13 +9,10 @@ include ./Makefile.common
 
 all: dir2pkg/dir2pkg packlad/packlad
 
-ed25519/libed25519.a:
-	cd ed25519; $(MAKE)
-
-keys: ed25519/libed25519.a
+genkeys:
 	cd keys; $(MAKE)
 
-core/libpacklad-core.a: ed25519/libed25519.a keys/pub_key
+core/libpacklad-core.a: keys/pub_key
 	cd core; $(MAKE)
 
 logic/libpacklad-logic.a: core/libpacklad-core.a
@@ -51,5 +48,4 @@ clean:
 	cd logic; $(MAKE) clean
 	cd core; $(MAKE) clean
 	cd keys; $(MAKE) clean
-	cd ed25519; $(MAKE) clean
 	cd packlad; $(MAKE) clean

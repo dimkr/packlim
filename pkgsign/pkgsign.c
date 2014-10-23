@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 
-#include "../ed25519/ed25519.h"
+#include <ed25519.h>
 
 static int read_key(const char *path, unsigned char *key, const size_t len)
 {

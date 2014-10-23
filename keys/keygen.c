@@ -6,11 +6,12 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "../ed25519/ed25519.h"
+#include <ed25519.h>
 
 static bool write_key(const char *path,
-                     const unsigned char *key,
-                    const size_t len) {
+                      const unsigned char *key,
+                      const size_t len)
+{
 	int fd;
 	bool ret = false;
 

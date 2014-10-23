@@ -45,13 +45,13 @@ packlad depends on:
     gzip (https://www.gnu.org/software/gzip/) support
   - libcurl (http://curl.haxx.se/)
   - zlib (http://www.zlib.net/)
-  - ed25519 (bundled in the sources tree)
+  - ed25519 (https://github.com/orlp/ed25519)
 
 Building
 ========
 
 To generate a key pair:
-  make keys
+  make genkeys
 
 To build packlad:
   make
@@ -80,7 +80,6 @@ Directory Structure
 
   - "doc" contains documentation
   - "compat" contains compatibility and portability code
-  - "ed25519" contains the Ed25519 digital signature library
   - "keys" contains packlad's private and public keys and a key generator
   - "pkgsign" contains a package signing tool
   - "dir2pkg" contains a script that generates a signed package from a directory
@@ -129,8 +128,5 @@ Credits and Legal Information
 
 packlad is licensed under a 2-clause BSD license, see COPYING for the license
 text. For a list of its authors and contributors, see AUTHORS.
-
-The bundled Ed25519 is public-domain code written by Orson Peters. It was taken
-from https://github.com/orlp/ed25519.
 
 The ASCII art logo at the top was made using FIGlet (http://www.figlet.org/).

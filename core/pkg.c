@@ -5,7 +5,7 @@
 #include <sys/mman.h>
 #include <arpa/inet.h>
 
-#include "../ed25519/ed25519.h"
+#include <ed25519.h>
 
 #include "log.h"
 #include "pkg.h"
