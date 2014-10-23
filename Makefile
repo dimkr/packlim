@@ -12,16 +12,10 @@ all: dir2pkg/dir2pkg packlad/packlad
 ed25519/libed25519.a:
 	cd ed25519; $(MAKE)
 
-keygen/keygen: ed25519/libed25519.a
-	cd keygen; $(MAKE)
+keys/pub_key: ed25519/libed25519.a
+	cd keys; $(MAKE)
 
-core/pub_key core/pub_key.h core/priv_key core/priv_key.h: keygen/keygen
-	./keygen/keygen core/pub_key \
-	                core/pub_key.h \
-	                core/priv_key \
-	                core/priv_key.h
-
-core/libpacklad-core.a: ed25519/libed25519.a core/pub_key.h
+core/libpacklad-core.a: ed25519/libed25519.a keys/pub_key
 	cd core; $(MAKE)
 
 logic/libpacklad-logic.a: core/libpacklad-core.a
@@ -48,13 +42,14 @@ install: all
 	$(INSTALL) -D -d -m 755 $(DESTDIR)/$(VAR_DIR)
 	$(INSTALL) -d -m 755 $(DESTDIR)/$(PKG_ARCHIVE_DIR)
 	$(INSTALL) -d -m 755 $(DESTDIR)/$(INST_DATA_DIR)
+	$(INSTALL) -D -d -m 755 $(DESTDIR)/$(CONF_DIR)
+	$(INSTALL) -m 400 keys/pub_key $(DESTDIR)/$(CONF_DIR)/pub_key
 
 clean:
 	cd dir2pkg; $(MAKE) clean
 	cd pkgsign; $(MAKE) clean
 	cd logic; $(MAKE) clean
 	cd core; $(MAKE) clean
-	rm -f core/priv_key.h core/priv_key core/pub_key.h core/pub_key
-	cd keygen; $(MAKE) clean
+	cd keys; $(MAKE) clean
 	cd ed25519; $(MAKE) clean
 	cd packlad; $(MAKE) clean

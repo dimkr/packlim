@@ -92,7 +92,7 @@ close_file:
 
 end:
 	if (false == ret)
-		log_write(LOG_ERR, "Failed to fetch %s\n", url);
+		log_write(LOG_ERR, "Failed to fetch %s\n", abs_url);
 
 	return ret;
 }

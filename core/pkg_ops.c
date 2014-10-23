@@ -40,7 +40,7 @@ static bool list_file(void *arg, const char *path)
 
 bool pkg_install(const char *path,
                  const struct pkg_entry *entry,
-                 const bool check_sig)
+                 const unsigned char *pub_key)
 {
 	char dir[PATH_MAX];
 	struct flist list;
@@ -53,7 +53,7 @@ bool pkg_install(const char *path,
 		goto end;
 
 	log_write(LOG_INFO, "Verifying %s\n", entry->fname);
-	if (false == pkg_verify(&pkg, check_sig))
+	if (false == pkg_verify(&pkg, pub_key))
 		goto close_pkg;
 
 	len = snprintf(dir, sizeof(dir), INST_DATA_DIR"/%s", entry->name);

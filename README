@@ -11,8 +11,6 @@ Overview
 packlad is a lightweight, permissively-licensed package manager for Linux
 (https://www.kernel.org/) distributions.
 
-IT'S UNDER HEAVY DEVELOPMENT and NOT READY FOR USE.
-
 It tries to combine:
   - The speed and robustness of pacman (https://www.archlinux.org/pacman/)
   - Digitally-signed packages, as with major package managers, but without bloat
@@ -72,8 +70,7 @@ Directory Structure
   - "doc" contains documentation
   - "compat" contains compatibility and portability code
   - "ed25519" contains the Ed25519 digital signature library
-  - "keygen" contains a key generator that generates packlad's private and
-    public keys
+  - "keys" contains packlad's private and public keys and a key generator
   - "pkgsign" contains a package signing tool
   - "dir2pkg" contains a script that generates a signed package from a directory
   - "core" contains packlad's core: low-level package manager building blocks

@@ -7,7 +7,7 @@ bool packlad_update(const char *url)
 	struct repo repo;
 	bool ret = false;
 
-	log_write(LOG_INFO, "Updating the package list from %s\n", url);
+	log_write(LOG_INFO, "Updating the package list\n");
 
 	if (false == repo_open(&repo, url))
 		goto end;

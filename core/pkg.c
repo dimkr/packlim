@@ -5,8 +5,9 @@
 #include <sys/mman.h>
 #include <arpa/inet.h>
 
+#include "../ed25519/ed25519.h"
+
 #include "log.h"
-#include "sig.h"
 #include "pkg.h"
 
 bool pkg_open(struct pkg *pkg, const char *path)
@@ -43,19 +44,19 @@ error:
 	return false;
 }
 
-bool pkg_verify(struct pkg *pkg, const bool check_sig)
+bool pkg_verify(struct pkg *pkg, const unsigned char *pub_key)
 {
 	if (PKG_MAGIC != ntohl(pkg->hdr->magic)) {
 		log_write(LOG_ERR, "The package is invalid\n");
 		return false;
 	}
 
-	if (false == check_sig) {
+	if (NULL == pub_key) {
 		log_write(LOG_WARN, "Skipping the digital signature verification\n");
 		return true;
 	}
 
-	if (false == sig_verify(pkg->hdr->sig, pkg->data, pkg->tar_size)) {
+	if (1 != ed25519_verify(pkg->hdr->sig, pkg->data, pkg->tar_size, pub_key)) {
 		log_write(LOG_ERR, "The package digital signature is invalid\n");
 		return false;
 	}
