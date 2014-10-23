@@ -11,6 +11,7 @@ PKG_LIST_PATH = .$(VAR_DIR)/$(PKG_LIST_FILE_NAME)
 INST_DATA_DIR = .$(VAR_DIR)/installed
 LOCK_FILE_PATH = .$(VAR_DIR)/lock
 PUB_KEY_PATH = .$(CONF_DIR)/pub_key
+LOCK_FILE_PATH = .$(VAR_DIR)/lock
 
 CURL_CFLAGS = $(shell $(PKG_CONFIG) --cflags libcurl)
 CURL_LIBS = $(shell $(PKG_CONFIG) --libs libcurl)
@@ -33,6 +34,7 @@ CFLAGS += -std=gnu99 \
           -DPKG_LIST_PATH=\"$(PKG_LIST_PATH)\" \
           -DINST_DATA_DIR=\"$(INST_DATA_DIR)\" \
           -DLOCK_FILE_PATH=\"$(LOCK_FILE_PATH)\" \
-          -DPUB_KEY_PATH=\"$(PUB_KEY_PATH)\"
+          -DPUB_KEY_PATH=\"$(PUB_KEY_PATH)\" \
+          -DLOCK_FILE_PATH=\"$(LOCK_FILE_PATH)\"
 
 LDFLAGS += -L../logic -L../core -L../ed25519

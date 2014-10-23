@@ -89,14 +89,6 @@ Directory Structure
     multiple modules of the core
   - "packlad" contains packlad itself
 
-TODO
-====
-
-  - A lock file, to disallow multiple instances running in parallel
-  - Design docs
-  - Automatic blackbox tests?
-  - Unit tests for low-level stuff
-
 FAQ
 ===
 

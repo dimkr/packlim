@@ -6,6 +6,7 @@
 #include <pwd.h>
 
 #include "../core/pkg_entry.h"
+#include "../core/lock.h"
 #include "../core/log.h"
 
 #include "../logic/install.h"
@@ -35,6 +36,7 @@ __attribute__((noreturn)) static void show_help(const char *prog)
 }
 
 int main(int argc, char *argv[]) {
+	struct lock_file lock;
 	struct passwd *user;
 	const char *root = "/";
 	char *reason = INST_REASON_USER;
@@ -151,6 +153,9 @@ check_sanity:
 		goto end;
 	}
 
+	if (false == lock_file(&lock))
+		goto end;
+
 	switch (action) {
 		case ACTION_INSTALL:
 			status = packlad_install(package, url, reason, check_sig);
@@ -180,6 +185,8 @@ check_sanity:
 			status = packlad_update(url);
 			break;
 	}
+
+	unlock_file(&lock);
 
 end:
 	if (false == status)
