@@ -36,6 +36,12 @@ Features
   - Support for digitally-signed packages, with quick verification
   - Support for multiple compression algorithms
 
+Lacking Features
+================
+
+  - Support for multiple repositories - packlad is designed for small
+    distributions with one repository per architecture
+
 Dependencies
 ============
 
@@ -45,7 +51,7 @@ packlad depends on:
     gzip (https://www.gnu.org/software/gzip/) support
   - libcurl (http://curl.haxx.se/)
   - zlib (http://www.zlib.net/)
-  - ed25519 (https://github.com/orlp/ed25519)
+  - Ed25519 (https://github.com/orlp/ed25519)
 
 Building
 ========
@@ -71,7 +77,7 @@ Usage
     The field meanings are self-explanatory.
   - Upload the packages and the package list to a server (which speaks any
     protocol supported by libcurl). Make sure the package list is named
-    "pkg_list".
+    "available".
   - Distribute packlad to the end-user, with the repository URL under the "REPO"
     environment variable. Make sure you keep the private key to yourself.
 
@@ -94,8 +100,20 @@ FAQ
   'packlad'? Are you serious?
   ----------------------------
 
-  Yes. It's like pacman (https://www.archlinux.org/pacman/) and packdude, but
-  smaller and younger.
+  Yes. It's like pacman (https://www.archlinux.org/pacman/) and packdude
+  (https://github.com/dimkr/packdude), but smaller and younger.
+
+  Why write another package manager?
+  ----------------------------------
+
+  packlad was written for RLSD (http://rlsd.dimakrasner.com/), because it needs
+  a small package manager that is easy to work with, secure, lightweight and
+  straight-forward, without unneeded questions
+
+  How does packlad work?
+  ----------------------
+
+  See doc/internals.txt.
 
   What's so bad about packdude?
   -----------------------------
@@ -111,8 +129,9 @@ FAQ
   - It supports only XZ compression.
   - It doesn't play nicely with luufs (https://github.com/dimkr/luufs), since
     all the package data is contained in one file.
+  - Its dependency resolution is inefficient.
 
-  What's good about packdude?
+  What was good about packdude?
   ---------------------------
 
   - It was small and fast. Package installation was quick.
