@@ -45,10 +45,10 @@ Lacking Features
 Dependencies
 ============
 
-packlad depends on:
-  - libarchive (http://libarchive.org/) with lzip
-    (http://www.nongnu.org/lzip/lzip.html), XZ (http://tukaani.org/xz/) and
-    gzip (https://www.gnu.org/software/gzip/) support
+  - libarchive (http://libarchive.org/) with support for:
+    - lzip (http://www.nongnu.org/lzip/lzip.html)
+    - XZ (http://tukaani.org/xz/)
+    - gzip (https://www.gnu.org/software/gzip/)
   - libcurl (http://curl.haxx.se/)
   - zlib (http://www.zlib.net/)
   - Ed25519 (https://github.com/orlp/ed25519)
@@ -67,14 +67,15 @@ To create packages, use dir2pkg with the keys under keys/.
 Usage
 =====
 
-  - Build packlad using make.
+  - Build packlad.
   - To create packages, place their files in directories and run dir2pkg for
     each. The keys you should use are the ones under keys/.
   - Then, create a package list with lines in the following format:
 
       packlad|1.0|A package manager|packlad-1.0.pkg|x86_64|libarchive curl zlib
 
-    The field meanings are self-explanatory.
+    If you don't understand how to create this package list, see
+    doc/internals.txt.
   - Upload the packages and the package list to a server (which speaks any
     protocol supported by libcurl). Make sure the package list is named
     "available".
@@ -90,9 +91,9 @@ Directory Structure
   - "pkgsign" contains a package signing tool
   - "dir2pkg" contains a script that generates a signed package from a directory
   - "core" contains packlad's core: low-level package manager building blocks
-  - "logic" contains packlad's high-level, complex operations, built using
+  - "logic" contains packlad's high-level, complex operations, built on top of
     multiple modules of the core
-  - "packlad" contains packlad itself
+  - "packlad" contains packlad itself, a command-line tool that wraps all logic
 
 FAQ
 ===
@@ -108,7 +109,7 @@ FAQ
 
   packlad was written for RLSD (http://rlsd.dimakrasner.com/), because it needs
   a small package manager that is easy to work with, secure, lightweight and
-  straight-forward, without unneeded questions
+  straight-forward, without unneeded questions.
 
   How does packlad work?
   ----------------------
