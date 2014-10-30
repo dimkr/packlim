@@ -59,7 +59,6 @@ bool packlad_install(const char *name,
 			goto close_repo;
 
 		case 1:
-			log_write(LOG_INFO, "Processing the package queue (one package)\n");
 			break;
 
 		default:
