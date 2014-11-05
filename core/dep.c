@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include "log.h"
 #include "dep.h"
@@ -62,6 +63,9 @@ bool dep_queue(struct pkg_queue *queue,
 		ret = true;
 		goto end;
 	}
+
+	if (UINT_MAX == pkg_queue_length(queue))
+		goto end;
 
 	entry = (struct pkg_entry *) malloc(sizeof(struct pkg_entry));
 	if (NULL == entry)
