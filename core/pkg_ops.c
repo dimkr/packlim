@@ -85,9 +85,10 @@ bool pkg_install(const char *path,
 	          entry->reason);
 	if (false == pkg_entry_register(entry)) {
 		(void) flist_for_each_reverse(&list, delete_file, NULL);
+		flist_close(&list);
 		if (true == flist_delete(&list))
 			(void) rmdir(dir);
-		goto close_flist;
+		goto close_pkg;
 	}
 
 	log_write(LOG_INFO, "Successfully installed %s\n", entry->name);
