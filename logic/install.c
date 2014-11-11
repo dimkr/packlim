@@ -11,6 +11,7 @@
 #include "../core/key.h"
 #include "../core/log.h"
 
+#include "update.h"
 #include "cleanup.h"
 #include "install.h"
 
@@ -31,8 +32,16 @@ bool packlad_install(const char *name,
 	bool ret = false;
 	bool error = false;
 
-	if (false == pkg_list_open(&list))
-		goto end;
+	switch (pkg_list_open(&list)) {
+		case TSTATE_ERROR:
+			if (true == packlad_update(url)) {
+				if (TSTATE_OK == pkg_list_open(&list))
+					break;
+			}
+
+		case TSTATE_FATAL:
+			goto end;
+	}
 
 	if (false == key_read(PUB_KEY_PATH, pub_key, sizeof(pub_key))) {
 		log_write(LOG_ERR, "Failed to read the public key\n");

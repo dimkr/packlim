@@ -1,19 +1,24 @@
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
+#include <errno.h>
 
 #include "log.h"
 #include "pkg_list.h"
 
-bool pkg_list_open(struct pkg_list *list)
+tristate_t pkg_list_open(struct pkg_list *list)
 {
 	list->fh = fopen(PKG_LIST_PATH, "r");
-	if (NULL == list->fh) {
-		log_write(LOG_ERR, "Failed to open the package list\n");
-		return false;
+	if (NULL != list->fh)
+		return TSTATE_OK;
+
+	if (ENOENT == errno) {
+		log_write(LOG_WARN, "The package list does not exist\n");
+		return TSTATE_ERROR;
 	}
 
-	return true;
+	log_write(LOG_ERR, "Failed to open the package list\n");
+	return TSTATE_FATAL;
 }
 
 void pkg_list_close(struct pkg_list *list)

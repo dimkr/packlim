@@ -42,6 +42,11 @@ void log_write(const int level, const char *format, ...)
 	va_end(args);
 }
 
+int log_get_min_level(void)
+{
+	return g_min_level;
+}
+
 void log_set_min_level(const int level)
 {
 	g_min_level = level;

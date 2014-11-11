@@ -7,6 +7,7 @@
 #include "../core/flist.h"
 #include "../core/log.h"
 
+#include "update.h"
 #include "list.h"
 
 static bool list_entry(const struct pkg_entry *entry)
@@ -32,13 +33,27 @@ static bool list_if_not_installed(const struct pkg_entry *entry)
 	return false;
 }
 
-bool packlad_list_avail(void)
+bool packlad_list_avail(const char *url)
 {
 	struct pkg_list list;
+	int level;
 	bool ret = false;
 
-	if (false == pkg_list_open(&list))
-		goto end;
+	level = log_get_min_level();
+	log_set_min_level(LOG_ERR);
+
+	switch (pkg_list_open(&list)) {
+		case TSTATE_ERROR:
+			if (true == packlad_update(url)) {
+				if (TSTATE_OK == pkg_list_open(&list))
+					break;
+			}
+
+		case TSTATE_FATAL:
+			goto end;
+	}
+
+	log_set_min_level(level);
 
 	if (TSTATE_OK == pkg_list_for_each(&list, list_if_not_installed))
 		ret = true;

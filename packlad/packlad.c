@@ -170,7 +170,7 @@ check_sanity:
 			break;
 
 		case ACTION_LIST_AVAILABLE:
-			status = packlad_list_avail();
+			status = packlad_list_avail(url);
 			break;
 
 		case ACTION_LIST_REMOVABLE:

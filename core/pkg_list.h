@@ -11,7 +11,7 @@ struct pkg_list {
 	FILE *fh;
 };
 
-bool pkg_list_open(struct pkg_list *list);
+tristate_t pkg_list_open(struct pkg_list *list);
 void pkg_list_close(struct pkg_list *list);
 
 tristate_t pkg_list_get(struct pkg_list *list,

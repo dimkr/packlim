@@ -3,7 +3,7 @@
 
 #	include <stdbool.h>
 
-bool packlad_list_avail(void);
+bool packlad_list_avail(const char *url);
 bool packlad_list_inst(void);
 bool packlad_list_removable(void);
 
