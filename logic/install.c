@@ -48,7 +48,7 @@ bool packlad_install(const char *name,
 		goto end;
 	}
 
-	log_write(LOG_INFO, "Building the package queue\n");
+	log_write(LOG_DEBUG, "Building the package queue\n");
 
 	pkg_queue_init(&q);
 	if (false == dep_queue(&q, &list, name))
