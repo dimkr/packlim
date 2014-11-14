@@ -32,7 +32,6 @@ Features
 
   - Package download and installation, with recursive dependencies resolution
   - Package removal, with automatic cleanup of unneeded packages
-  - Support for multiple package repositories
   - Support for digitally-signed packages, with quick verification
   - Support for multiple compression algorithms
 
