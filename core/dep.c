@@ -87,7 +87,7 @@ bool dep_queue(struct pkg_queue *queue,
 	if (TSTATE_OK != pkg_list_get(list, entry, name))
 		goto free_entry;
 
-	log_write(LOG_INFO, "Queueing %s for installation\n", entry->name);
+	log_write(LOG_DEBUG, "Queueing %s for installation\n", entry->name);
 	if (false == pkg_queue_push(queue, entry))
 		goto empty_queue;
 
@@ -175,7 +175,7 @@ static tristate_t if_unneeded(const struct pkg_entry *entry, void *arg)
 			return TSTATE_FATAL;
 	}
 
-	log_write(LOG_INFO, "%s is no longer required\n", entry->name);
+	log_write(LOG_DEBUG, "%s is no longer required\n", entry->name);
 	if (false == params->cb(entry, params->arg))
 		return TSTATE_ERROR;
 

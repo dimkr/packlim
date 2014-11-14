@@ -48,7 +48,7 @@ bool pkg_install(const char *path,
 	int len;
 	bool ret = false;
 
-	log_write(LOG_INFO, "Opening %s\n", entry->fname);
+	log_write(LOG_DEBUG, "Opening %s\n", entry->fname);
 	if (false == pkg_open(&pkg, path))
 		goto end;
 
@@ -110,6 +110,8 @@ bool pkg_remove(const char *name)
 	struct flist list;
 	int len;
 	bool ret = false;
+
+	log_write(LOG_INFO, "Removing %s\n", name);
 
 	log_write(LOG_DEBUG, "Opening the file list of %s\n", name);
 	if (false == flist_open(&list, "r", name))
