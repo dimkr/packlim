@@ -22,7 +22,7 @@ else
 			comp="$comp -9 -e"
 		else
 			echo "Warning: cannot find lzip, clzip or xz; falling back to " \
-                 "lzip compression." 1>&2
+                 "gzip compression." 1>&2
 			comp="gzip -9"
 		fi
 	fi
