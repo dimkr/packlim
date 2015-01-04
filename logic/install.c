@@ -18,7 +18,7 @@
 bool packlad_install(const char *name,
                      const char *url,
                      const char *reason,
-                     const bool check_sig)
+                     const bool strict)
 {
 	char path[PATH_MAX];
 	unsigned char pub_key[32];
@@ -26,7 +26,6 @@ bool packlad_install(const char *name,
 	struct repo repo;
 	struct pkg_queue q;
 	struct pkg_entry *entry;
-	const unsigned char *keyp;
 	unsigned int count;
 	int len;
 	bool ret = false;
@@ -76,11 +75,6 @@ bool packlad_install(const char *name,
 			          count);
 	}
 
-	if (true == check_sig)
-		keyp = pub_key;
-	else
-		keyp = NULL;
-
 	do {
 		entry = pkg_queue_pop(&q);
 		if (NULL == entry) {
@@ -103,7 +97,7 @@ bool packlad_install(const char *name,
 			entry->reason = (char *) reason;
 		else
 			entry->reason = (char *) INST_REASON_DEP;
-		if (false == pkg_install(path, entry, keyp)) {
+		if (false == pkg_install(path, entry, pub_key, strict)) {
 			log_write(LOG_ERR, "Cannot install %s\n", name);
 			error = true;
 			goto free_entry;

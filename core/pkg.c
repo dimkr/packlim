@@ -44,23 +44,24 @@ error:
 	return false;
 }
 
-bool pkg_verify(struct pkg *pkg, const unsigned char *pub_key)
+bool pkg_verify(struct pkg *pkg,
+                const unsigned char *pub_key,
+                const bool strict)
 {
 	if (PKG_MAGIC != ntohl(pkg->hdr->magic)) {
 		log_write(LOG_ERR, "The package is invalid\n");
 		return false;
 	}
 
-	if (NULL == pub_key) {
-		log_write(LOG_WARN, "Skipping the digital signature verification\n");
+	if (1 == ed25519_verify(pkg->hdr->sig, pkg->data, pkg->tar_size, pub_key))
 		return true;
-	}
 
-	if (1 != ed25519_verify(pkg->hdr->sig, pkg->data, pkg->tar_size, pub_key)) {
+	if (true == strict) {
 		log_write(LOG_ERR, "The package digital signature is invalid\n");
 		return false;
 	}
 
+	log_write(LOG_WARN, "The package digital signature is invalid; ignoring\n");
 	return true;
 }
 

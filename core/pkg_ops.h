@@ -7,7 +7,8 @@
 
 bool pkg_install(const char *path,
                  const struct pkg_entry *entry,
-                 const unsigned char *pub_key);
+                 const unsigned char *pub_key,
+                 const bool strict);
 
 bool pkg_remove(const char *name);
 
