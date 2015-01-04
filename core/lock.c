@@ -14,7 +14,7 @@ bool lock_file(struct lock_file *lock)
 	                O_WRONLY | O_CREAT,
 	                S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (-1 == lock->fd) {
-		log_write(LOG_ERR, "Failed to open the lock file\n");
+		log_write(LOG_ERR, "failed to open the lock file\n");
 		goto error;
 	}
 
@@ -22,7 +22,8 @@ bool lock_file(struct lock_file *lock)
 		switch (errno) {
 			case EAGAIN:
 			case EACCES:
-				log_write(LOG_WARN, "Another instance is running; waiting\n");
+				log_write(LOG_WARNING,
+				          "Another instance is running; waiting\n");
 				break;
 
 			default:
@@ -31,7 +32,7 @@ bool lock_file(struct lock_file *lock)
 	}
 
 	if (-1 == lockf(lock->fd, F_LOCK, 0)) {
-		log_write(LOG_ERR, "Failed to lock the lock file\n");
+		log_write(LOG_ERR, "failed to lock the lock file\n");
 		goto close_lock;
 	}
 

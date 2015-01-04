@@ -70,7 +70,7 @@ bool pkg_entry_parse(struct pkg_entry *entry)
 
 	entry->ver = strchr(entry->name, '|');
 	if (NULL == entry->ver) {
-		log_write(LOG_ERR, "The package entry lacks a version field\n");
+		log_write(LOG_ERR, "the package entry lacks a version field\n");
 		goto invalid;
 	}
 	entry->ver[0] = '\0';
@@ -78,7 +78,7 @@ bool pkg_entry_parse(struct pkg_entry *entry)
 
 	entry->desc = strchr(entry->ver, '|');
 	if (NULL == entry->desc) {
-		log_write(LOG_ERR, "The package entry lacks a description field\n");
+		log_write(LOG_ERR, "the package entry lacks a description field\n");
 		goto invalid;
 	}
 	entry->desc[0] = '\0';
@@ -86,7 +86,7 @@ bool pkg_entry_parse(struct pkg_entry *entry)
 
 	entry->fname = strchr(entry->desc, '|');
 	if (NULL == entry->fname) {
-		log_write(LOG_ERR, "The package entry lacks a file name field\n");
+		log_write(LOG_ERR, "the package entry lacks a file name field\n");
 		goto invalid;
 	}
 	entry->fname[0] = '\0';
@@ -94,7 +94,7 @@ bool pkg_entry_parse(struct pkg_entry *entry)
 
 	entry->arch = strchr(entry->fname, '|');
 	if (NULL == entry->arch) {
-		log_write(LOG_ERR, "The package entry lacks an architecture field\n");
+		log_write(LOG_ERR, "the package entry lacks an architecture field\n");
 		goto invalid;
 	}
 	entry->arch[0] = '\0';
@@ -102,7 +102,7 @@ bool pkg_entry_parse(struct pkg_entry *entry)
 
 	entry->deps = strchr(entry->arch, '|');
 	if (NULL == entry->deps) {
-		log_write(LOG_ERR, "The package entry lacks a dependencies field\n");
+		log_write(LOG_ERR, "the package entry lacks a dependencies field\n");
 		goto invalid;
 	}
 	entry->deps[0] = '\0';

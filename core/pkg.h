@@ -24,7 +24,7 @@ struct pkg {
 };
 
 bool pkg_open(struct pkg *pkg, const char *path);
-bool pkg_verify(struct pkg *pkg,
+bool pkg_verify(const struct pkg *pkg,
                 const unsigned char *pub_key,
                 const bool strict);
 void pkg_close(struct pkg *pkg);

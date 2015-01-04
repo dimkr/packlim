@@ -73,13 +73,13 @@ bool dep_queue(struct pkg_queue *queue,
 
 	switch (pkg_entry_get(name, entry)) {
 		case TSTATE_OK:
-			log_write(LOG_WARN, "%s is already installed\n", name);
+			log_write(LOG_WARNING, "%s is already installed\n", name);
 			ret = true;
 			goto free_entry;
 
 		case TSTATE_FATAL:
 			log_write(LOG_ERR,
-			          "Failed to check whether %s is already installed\n",
+			          "failed to check whether %s is already installed\n",
 			          name);
 			goto free_entry;
 	}
@@ -87,11 +87,11 @@ bool dep_queue(struct pkg_queue *queue,
 	if (TSTATE_OK != pkg_list_get(list, entry, name))
 		goto free_entry;
 
-	log_write(LOG_DEBUG, "Queueing %s for installation\n", entry->name);
+	log_write(LOG_DEBUG, "queueing %s for installation\n", entry->name);
 	if (false == pkg_queue_push(queue, entry))
 		goto empty_queue;
 
-	log_write(LOG_DEBUG, "Resolving the dependencies of %s\n", entry->name);
+	log_write(LOG_DEBUG, "resolving the dependencies of %s\n", entry->name);
 	params.queue = queue;
 	params.list = list;
 	if (TSTATE_OK == for_each_dep(entry->deps, dep_recurse, (void *) &params)) {
@@ -163,14 +163,14 @@ static tristate_t if_unneeded(const struct pkg_entry *entry, void *arg)
 	switch (pkg_not_required(entry->name)) {
 		case TSTATE_ERROR:
 			log_write(LOG_DEBUG,
-			          "Cannot remove %s; another package depends on it\n",
+			          "cannot remove %s; another package depends on it\n",
 			          entry->name);
 			return TSTATE_OK;
 
 		case TSTATE_FATAL:
 			log_write(
 			     LOG_ERR,
-			     "Cannot determine whether %s is required by another package\n",
+			     "cannot determine whether %s is required by another package\n",
 			     entry->name);
 			return TSTATE_FATAL;
 	}
@@ -191,7 +191,7 @@ tristate_t for_each_unneeded_pkg(bool (*cb)(const struct pkg_entry *entry,
 	unsigned int total;
 	tristate_t ret;
 
-	log_write(LOG_DEBUG, "Looking for unneeded packages\n");
+	log_write(LOG_DEBUG, "looking for unneeded packages\n");
 
 	params.cb = cb;
 	params.arg = arg;
@@ -210,7 +210,7 @@ tristate_t for_each_unneeded_pkg(bool (*cb)(const struct pkg_entry *entry,
 	} while (1);
 
 	if (0 == total)
-		log_write(LOG_DEBUG, "There are no unneeded packages\n");
+		log_write(LOG_DEBUG, "there are no unneeded packages\n");
 
 	return TSTATE_OK;
 }

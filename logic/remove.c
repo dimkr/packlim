@@ -15,13 +15,13 @@ bool packlad_remove(const char *name)
 
 	switch (pkg_entry_get(name, &entry)) {
 		case TSTATE_ERROR:
-			log_write(LOG_WARN, "%s is not installed\n", name);
+			log_write(LOG_WARNING, "%s is not installed\n", name);
 			ret = true;
 			goto end;
 
 		case TSTATE_FATAL:
 			log_write(LOG_ERR,
-			          "Could not check whether %s is installed\n",
+			          "could not check whether %s is installed\n",
 			          name);
 			goto end;
 	}

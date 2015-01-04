@@ -13,11 +13,11 @@ tristate_t pkg_list_open(struct pkg_list *list)
 		return TSTATE_OK;
 
 	if (ENOENT == errno) {
-		log_write(LOG_WARN, "The package list does not exist\n");
+		log_write(LOG_WARNING, "the package list does not exist\n");
 		return TSTATE_ERROR;
 	}
 
-	log_write(LOG_ERR, "Failed to open the package list\n");
+	log_write(LOG_ERR, "failed to open the package list\n");
 	return TSTATE_FATAL;
 }
 
@@ -32,7 +32,7 @@ tristate_t pkg_list_get(struct pkg_list *list,
 {
 	tristate_t ret = TSTATE_FATAL;
 
-	log_write(LOG_DEBUG, "Searching the package list for %s\n", name);
+	log_write(LOG_DEBUG, "searching the package list for %s\n", name);
 
 	rewind(list->fh);
 
@@ -43,13 +43,13 @@ tristate_t pkg_list_get(struct pkg_list *list,
 				break;
 			}
 			else {
-				log_write(LOG_DEBUG, "Failed to read the package list\n");
+				log_write(LOG_DEBUG, "failed to read the package list\n");
 				break;
 			}
 		}
 
 		if (false == pkg_entry_parse(entry)) {
-			log_write(LOG_DEBUG, "Failed to parse the package list\n");
+			log_write(LOG_DEBUG, "failed to parse the package list\n");
 			break;
 		}
 
@@ -61,16 +61,16 @@ tristate_t pkg_list_get(struct pkg_list *list,
 
 	switch (ret) {
 		case TSTATE_OK:
-			log_write(LOG_DEBUG, "Found %s, version %s\n", name, entry->ver);
+			log_write(LOG_DEBUG, "found %s, version %s\n", name, entry->ver);
 			break;
 
 		case TSTATE_FATAL:
-			log_write(LOG_DEBUG, "Failed to read the package list\n", name);
+			log_write(LOG_DEBUG, "failed to read the package list\n", name);
 			break;
 
 		case TSTATE_ERROR:
 			log_write(LOG_ERR,
-			          "Could not find %s in the package list\n",
+			          "could not find %s in the package list\n",
 			          name);
 	}
 
@@ -89,13 +89,13 @@ tristate_t pkg_list_for_each(struct pkg_list *list,
 			if (0 != feof(list->fh))
 				break;
 			else {
-				log_write(LOG_ERR, "Failed to read the package list\n");
+				log_write(LOG_ERR, "failed to read the package list\n");
 				return TSTATE_FATAL;
 			}
 		}
 
 		if (false == pkg_entry_parse(&entry)) {
-			log_write(LOG_ERR, "Failed to parse the package list\n");
+			log_write(LOG_ERR, "failed to parse the package list\n");
 			return TSTATE_FATAL;
 		}
 

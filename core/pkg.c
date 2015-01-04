@@ -44,12 +44,12 @@ error:
 	return false;
 }
 
-bool pkg_verify(struct pkg *pkg,
+bool pkg_verify(const struct pkg *pkg,
                 const unsigned char *pub_key,
                 const bool strict)
 {
 	if (PKG_MAGIC != ntohl(pkg->hdr->magic)) {
-		log_write(LOG_ERR, "The package is invalid\n");
+		log_write(LOG_ERR, "the package is invalid\n");
 		return false;
 	}
 
@@ -57,11 +57,12 @@ bool pkg_verify(struct pkg *pkg,
 		return true;
 
 	if (true == strict) {
-		log_write(LOG_ERR, "The package digital signature is invalid\n");
+		log_write(LOG_ALERT, "the package digital signature is invalid!\n");
 		return false;
 	}
 
-	log_write(LOG_WARN, "The package digital signature is invalid; ignoring\n");
+	log_write(LOG_WARNING,
+	          "the package digital signature is invalid; ignoring\n");
 	return true;
 }
 

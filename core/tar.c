@@ -32,7 +32,7 @@ static bool extract_file(struct archive *in, struct archive *out)
 				return true;
 
 			default:
-				log_write(LOG_ERR, "The archive extraction failed\n");
+				log_write(LOG_ERR, "the archive extraction failed\n");
 				return false;
 		}
 	} while (1);
@@ -80,7 +80,7 @@ bool tar_extract(unsigned char *data,
 				goto close_output;
 
 			default:
-				log_write(LOG_ERR, "Failed to read the archive\n");
+				log_write(LOG_ERR, "failed to read the archive\n");
 				goto close_output;
 		}
 
@@ -99,7 +99,7 @@ bool tar_extract(unsigned char *data,
 		if (false == cb(arg, path))
 			break;
 		if (ARCHIVE_OK != archive_write_header(out, entry)) {
-			log_write(LOG_ERR, "Failed to read a file header\n");
+			log_write(LOG_ERR, "failed to read a file header\n");
 			break;
 		}
 		if (false == extract_file(in, out))

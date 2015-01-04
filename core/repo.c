@@ -68,7 +68,7 @@ bool repo_fetch(struct repo *repo, const char *url, const char *path)
 	if ((sizeof(abs_url) <= len) || (0 > len))
 		goto end;
 
-	log_write(LOG_INFO, "Fetching %s\n", abs_url);
+	log_write(LOG_INFO, "fetching %s\n", abs_url);
 
 	fh = fopen(path, "wb");
 	if (NULL == fh)
@@ -92,7 +92,7 @@ close_file:
 
 end:
 	if (false == ret)
-		log_write(LOG_ERR, "Failed to fetch %s\n", abs_url);
+		log_write(LOG_ERR, "failed to fetch %s\n", abs_url);
 
 	return ret;
 }

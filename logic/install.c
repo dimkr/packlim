@@ -43,11 +43,11 @@ bool packlad_install(const char *name,
 	}
 
 	if (false == key_read(PUB_KEY_PATH, pub_key, sizeof(pub_key))) {
-		log_write(LOG_ERR, "Failed to read the public key\n");
+		log_write(LOG_ERR, "failed to read the public key\n");
 		goto end;
 	}
 
-	log_write(LOG_INFO, "Building the package queue\n");
+	log_write(LOG_INFO, "building the package queue\n");
 
 	pkg_queue_init(&q);
 	if (false == dep_queue(&q, &list, name))
@@ -71,7 +71,7 @@ bool packlad_install(const char *name,
 
 		default:
 			log_write(LOG_INFO,
-			          "Processing the package queue (%u packages)\n",
+			          "processing the package queue (%u packages)\n",
 			          count);
 	}
 
@@ -98,7 +98,7 @@ bool packlad_install(const char *name,
 		else
 			entry->reason = (char *) INST_REASON_DEP;
 		if (false == pkg_install(path, entry, pub_key, strict)) {
-			log_write(LOG_ERR, "Cannot install %s\n", name);
+			log_write(LOG_ERR, "cannot install %s\n", name);
 			error = true;
 			goto free_entry;
 		}

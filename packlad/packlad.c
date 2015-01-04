@@ -153,8 +153,10 @@ check_sanity:
 		goto end;
 	}
 
+	log_open();
+
 	if (false == lock_file(&lock))
-		goto end;
+		goto close_log;
 
 	switch (action) {
 		case ACTION_INSTALL:
@@ -187,6 +189,9 @@ check_sanity:
 	}
 
 	unlock_file(&lock);
+
+close_log:
+	log_close();
 
 end:
 	if (false == status)

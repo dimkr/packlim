@@ -11,14 +11,14 @@
 
 static bool delete_file(const char *path, void *arg)
 {
-	log_write(LOG_DEBUG, "Removing %s\n", path);
+	log_write(LOG_DEBUG, "removing %s\n", path);
 
 	if (0 == unlink(path))
 		return true;
 
 	switch (errno) {
 		case ENOENT:
-			log_write(LOG_WARN, "%s is missing\n", path);
+			log_write(LOG_WARNING, "%s is missing\n", path);
 			return true;
 
 		case EISDIR:
@@ -28,13 +28,13 @@ static bool delete_file(const char *path, void *arg)
 				return true;
 	}
 
-	log_write(LOG_ERR, "Failed to remove %s\n", path);
+	log_write(LOG_ERR, "failed to remove %s\n", path);
 	return false;
 }
 
 static bool list_file(void *arg, const char *path)
 {
-	log_write(LOG_DEBUG, "Extracting %s\n", path);
+	log_write(LOG_DEBUG, "extracting %s\n", path);
 	return flist_add((struct flist *) arg, path);
 }
 
@@ -49,11 +49,11 @@ bool pkg_install(const char *path,
 	int len;
 	bool ret = false;
 
-	log_write(LOG_DEBUG, "Opening %s\n", entry->fname);
+	log_write(LOG_DEBUG, "opening %s\n", entry->fname);
 	if (false == pkg_open(&pkg, path))
 		goto end;
 
-	log_write(LOG_INFO, "Verifying %s\n", entry->fname);
+	log_write(LOG_INFO, "verifying %s\n", entry->fname);
 	if (false == pkg_verify(&pkg, pub_key, strict))
 		goto close_pkg;
 
@@ -61,18 +61,18 @@ bool pkg_install(const char *path,
 	if ((sizeof(dir) <= len) || (0 > len))
 		goto close_pkg;
 
-	log_write(LOG_DEBUG, "Creating %s\n", dir);
+	log_write(LOG_DEBUG, "creating %s\n", dir);
 	if (-1 == mkdir(dir, S_IRUSR | S_IWUSR)) {
 		if (EEXIST != errno)
 			goto close_pkg;
-		log_write(LOG_WARN, "%s already exists\n", dir);
+		log_write(LOG_WARNING, "%s already exists\n", dir);
 	}
 
-	log_write(LOG_DEBUG, "Creating a file list for %s\n", entry->name);
+	log_write(LOG_DEBUG, "creating a file list for %s\n", entry->name);
 	if (false == flist_open(&list, "w+", entry->name))
 		goto close_pkg;
 
-	log_write(LOG_DEBUG, "Extracting %s\n", entry->fname);
+	log_write(LOG_DEBUG, "extracting %s\n", entry->fname);
 	if (false == tar_extract(pkg.data,
 	                         pkg.tar_size,
 	                         list_file,
@@ -81,7 +81,7 @@ bool pkg_install(const char *path,
 
 	/* upon failure to register the package, delete all the extracted files */
 	log_write(LOG_INFO,
-	          "Registering %s as a %s package\n",
+	          "registering %s as a %s package\n",
 	          entry->name,
 	          entry->reason);
 	if (false == pkg_entry_register(entry)) {
@@ -92,7 +92,7 @@ bool pkg_install(const char *path,
 		goto close_pkg;
 	}
 
-	log_write(LOG_INFO, "Successfully installed %s\n", entry->name);
+	log_write(LOG_INFO, "successfully installed %s\n", entry->name);
 	ret = true;
 
 close_flist:
@@ -112,21 +112,21 @@ bool pkg_remove(const char *name)
 	int len;
 	bool ret = false;
 
-	log_write(LOG_INFO, "Removing %s\n", name);
+	log_write(LOG_INFO, "removing %s\n", name);
 
-	log_write(LOG_DEBUG, "Opening the file list of %s\n", name);
+	log_write(LOG_DEBUG, "opening the file list of %s\n", name);
 	if (false == flist_open(&list, "r", name))
 		goto end;
 
-	log_write(LOG_DEBUG, "Removing files installed by %s\n", name);
+	log_write(LOG_DEBUG, "removing files installed by %s\n", name);
 	if (TSTATE_OK != flist_for_each_reverse(&list, delete_file, NULL))
 		goto close_list;
 
-	log_write(LOG_DEBUG, "Removing the file list of %s\n", name);
+	log_write(LOG_DEBUG, "removing the file list of %s\n", name);
 	if (false == flist_delete(&list))
 		goto close_list;
 
-	log_write(LOG_INFO, "Unregistering %s\n", name);
+	log_write(LOG_INFO, "unregistering %s\n", name);
 	if (false == pkg_entry_unregister(name))
 		goto close_list;
 
@@ -136,9 +136,9 @@ bool pkg_remove(const char *name)
 
 	/* the file list must be closed before the directory is removed */
 	flist_close(&list);
-	log_write(LOG_DEBUG, "Removing %s\n", dir);
+	log_write(LOG_DEBUG, "removing %s\n", dir);
 	if (0 == rmdir(dir)) {
-		log_write(LOG_INFO, "Successfully removed %s\n", name);
+		log_write(LOG_INFO, "successfully removed %s\n", name);
 		ret = true;
 	}
 	goto end;

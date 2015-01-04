@@ -74,7 +74,7 @@ void pkg_queue_empty(struct pkg_queue *queue)
 {
 	struct pkg_entry *entry;
 
-	log_write(LOG_DEBUG, "Emptying the installation queue\n");
+	log_write(LOG_DEBUG, "emptying the installation queue\n");
 
 	do {
 		entry = pkg_queue_pop(queue);
