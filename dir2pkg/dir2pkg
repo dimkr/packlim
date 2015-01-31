@@ -31,17 +31,7 @@ fi
 # create a compressed tar archive from the directory contents
 tar="$(mktemp -u)"
 tar -C "$1" -c . | $comp > "$tar"
-cp -f "$tar" "$4"
 
-# append packlad's magic number (0x686a6b6c)
-echo -n "hjkl" >> "$4"
-
-# sign the archive using Ed25519 and append the 64-byte signature
-pkgsign "$2" "$3" "$tar" >> "$4"
-if [ 0 -ne $? ]
-then
-	rm -f "$4"
-	exit 1
-fi
-
+# convert the archive to a package
+tar2pkg "$tar" "$2" "$3" "$4"
 rm -f "$tar"

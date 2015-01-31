@@ -1,16 +1,18 @@
-.TH dir2pkg 1
+.TH tar2pkg 1
 .SH NAME
-.B dir2pkg
+.B tar2pkg
 \- a package creator
 .SH SYNOPSIS
-.B dir2pkg
-DIR PRIVATE PUBLIC OUTPUT
+.B tar2pkg
+tar PRIVATE PUBLIC OUTPUT
 .SH DESCRIPTION
 Creates a digitally-signed
 .B
 packlad(8)
-package from the contents of a directory.
+package from a compressed
+.B tar(1)
+archive.
 .SH "SEE ALSO"
-.B tar2pkg(1), packlad(8)
+.B dir2pkg(1), packlad(8)
 .SH AUTHOR
 Dima Krasner (dima@dimakrasner.com)
