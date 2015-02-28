@@ -24,7 +24,7 @@ static bool delete_file(const char *path, void *arg)
 		case EISDIR:
 			if (0 == rmdir(path))
 				return true;
-			if ((ENOTEMPTY == errno) || (EROFS == errno))
+			if ((ENOTEMPTY == errno) || (EBUSY == errno) || (EROFS == errno))
 				return true;
 	}
 
