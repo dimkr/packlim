@@ -17,7 +17,6 @@ The line contains package metadata fields separated by "|":
   - The package version
   - The package description
   - The package path under the repository, relative to its root
-  - The package target architecture, or "all" if it's architecture-independent
   - The package dependencies, separated by spaces
 
 This format was chosen because:

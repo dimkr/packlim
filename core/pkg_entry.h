@@ -15,7 +15,6 @@ struct pkg_entry {
 	char *ver;
 	char *desc;
 	char *fname;
-	char *arch;
 	char *deps;
 	char *reason;
 };

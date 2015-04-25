@@ -30,12 +30,11 @@ bool pkg_entry_register(const struct pkg_entry *entry)
 		goto end;
 
 	if (0 < fprintf(fh,
-	                "%s|%s|%s|%s|%s|%s|%s\n",
+	                "%s|%s|%s|%s|%s|%s\n",
 	                entry->name,
 	                entry->ver,
 	                entry->desc,
 	                entry->fname,
-	                entry->arch,
 	                entry->deps,
 	                entry->reason))
 		ret = true;
@@ -92,15 +91,7 @@ bool pkg_entry_parse(struct pkg_entry *entry)
 	entry->fname[0] = '\0';
 	++entry->fname;
 
-	entry->arch = strchr(entry->fname, '|');
-	if (NULL == entry->arch) {
-		log_write(LOG_ERR, "the package entry lacks an architecture field\n");
-		goto invalid;
-	}
-	entry->arch[0] = '\0';
-	++entry->arch;
-
-	entry->deps = strchr(entry->arch, '|');
+	entry->deps = strchr(entry->fname, '|');
 	if (NULL == entry->deps) {
 		log_write(LOG_ERR, "the package entry lacks a dependencies field\n");
 		goto invalid;
