@@ -281,6 +281,12 @@ proc main {} {
 		usage "update|available|installed|install|remove|lock|source|purge \[ARG\]..."
 	}
 
+	set ids [os.getids]
+	if {0 != $ids(euid)} {
+		puts stderr "Error: must run as root."
+		exit 1
+	}
+
 	set env [env]
 	file mkdir /var/packlim /var/packlim/installed
 
