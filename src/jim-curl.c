@@ -6,20 +6,12 @@
 
 #define USER_AGENT "packlim/"VERSION
 
-static size_t append(const void *ptr,
-                     size_t size,
-                     size_t nmemb,
-                     void *stream)
-{
-	return fwrite(ptr, size, nmemb, (FILE *) stream);
-}
-
 static int fetch_file(CURL *curl, const char *url, const char *path)
 {
 	FILE *fh;
 	CURLcode code;
 
-	fh = fopen(path, "wb");
+	fh = fopen(path, "w");
 	if (NULL == fh)
 		return JIM_ERR;
 
@@ -42,8 +34,8 @@ delete_file:
 }
 
 static int JimCurlHandlerCommand(Jim_Interp *interp,
-                                       int argc,
-                                       Jim_Obj *const *argv)
+                                 int argc,
+                                 Jim_Obj *const *argv)
 {
 	static const char *const options[] = { "get", NULL };
 	const char *url;
@@ -53,7 +45,7 @@ static int JimCurlHandlerCommand(Jim_Interp *interp,
 	int len;
 	enum { OPT_GET };
 
-	if (2 > argc) {
+	if (4 != argc) {
 		Jim_WrongNumArgs(interp, 1, argv, "method ?args ...?");
 		return JIM_ERR;
 	}
@@ -66,23 +58,15 @@ static int JimCurlHandlerCommand(Jim_Interp *interp,
 	                          JIM_ERRMSG))
 		return JIM_ERR;
 
-	switch (option) {
-		case OPT_GET:
-			if (4 != argc)
-				return JIM_ERR;
+	url = Jim_GetString(argv[2], &len);
+	if (0 == len)
+		return JIM_ERR;
 
-			url = Jim_GetString(argv[2], &len);
-			if (0 == len)
-				return JIM_ERR;
+	path = Jim_GetString(argv[3], &len);
+	if (0 == len)
+		return JIM_ERR;
 
-			path = Jim_GetString(argv[3], &len);
-			if (0 == len)
-				return JIM_ERR;
-
-			return fetch_file(curl, url, path);
-	}
-
-	return JIM_OK;
+	return fetch_file(curl, url, path);
 }
 
 static void JimCurlDelProc(Jim_Interp *interp, void *privData)
@@ -104,17 +88,20 @@ int Jim_CurlCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	if (NULL == curl)
 		goto end;
 
-	if (CURLE_OK != curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT))
-		goto curl_clenaup;
+	if (CURLE_OK != curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1))
+		goto curl_cleanup;
 
 	if (CURLE_OK != curl_easy_setopt(curl, CURLOPT_TCP_NODELAY, 1))
-		goto curl_clenaup;
+		goto curl_cleanup;
 
-	if (CURLE_OK != curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1))
-		goto curl_clenaup;
+	if (CURLE_OK != curl_easy_setopt(curl, CURLOPT_USE_SSL, CURLUSESSL_TRY))
+		goto curl_cleanup;
 
-	if (CURLE_OK != curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, append))
-		goto curl_clenaup;
+	if (CURLE_OK != curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fwrite))
+		goto curl_cleanup;
+
+	if (CURLE_OK != curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT))
+		goto curl_cleanup;
 
 	(void) sprintf(buf, "curl.handle%ld", Jim_GetId(interp));
 	Jim_CreateCommand(interp,
@@ -130,7 +117,7 @@ int Jim_CurlCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 	return JIM_OK;
 
-curl_clenaup:
+curl_cleanup:
 	curl_easy_cleanup(curl);
 
 end:

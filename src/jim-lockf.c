@@ -86,10 +86,7 @@ end:
 int Jim_LockfTestCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	const char *path;
-	int len;
-	int fd;
-	int ret = JIM_ERR;
-	int locked;
+	int len, fd, locked, ret = JIM_ERR;
 
 	if (2 != argc) {
 		Jim_WrongNumArgs(interp, 1, argv, "path");
@@ -106,7 +103,6 @@ int Jim_LockfTestCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	if (-1 == fd) {
 		if (ENOENT == errno)
 			goto set_result;
-
 		goto end;
 	}
 
@@ -115,8 +111,8 @@ int Jim_LockfTestCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 	if ((EAGAIN != errno) && (EACCES != errno))
 		goto close_fd;
-	else
-		locked = 1;
+
+	locked = 1;
 
 set_result:
 	Jim_SetResultBool(interp, locked);

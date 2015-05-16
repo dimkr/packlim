@@ -63,8 +63,7 @@ static int iter_files(unsigned char *data,
                                 const char *),
                       void *arg)
 {
-	struct archive *in;
-	struct archive *out;
+	struct archive *in, *out;
 	struct archive_entry *entry;
 	const char *path;
 	int ret = JIM_ERR;
@@ -121,10 +120,8 @@ static int iter_files(unsigned char *data,
 		if (0 == strcmp("./", path))
 			continue;
 
-		if (NULL != out) {
-			if (ARCHIVE_OK != archive_write_header(out, entry))
-				break;
-		}
+		if (ARCHIVE_OK != archive_write_header(out, entry))
+			break;
 
 		if (JIM_OK != cb(in, out, interp, arg, &path[1]))
 			break;

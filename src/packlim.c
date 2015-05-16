@@ -1,12 +1,9 @@
 #include <stdlib.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <jim.h>
 #include <curl/curl.h>
-
-static const char packlim_tcl[] = {
-#include "packlim.inc"
-};
 
 extern int Jim_LockfLockCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
 extern int Jim_LockfTestCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
@@ -18,6 +15,10 @@ extern int Jim_TarExtractCmd(Jim_Interp *interp,
                              int argc,
                              Jim_Obj *const *argv);
 extern int Jim_CurlCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
+
+static const char packlim_tcl[] = {
+#include "packlim.inc"
+};
 
 static int Jim_packlimInit(Jim_Interp *jim)
 {
@@ -67,6 +68,11 @@ int main(int argc, char *argv[])
 	Jim_Obj *argv_obj;
 	int i;
 	int ret = EXIT_FAILURE;
+
+	if (0 != geteuid()) {
+		(void) write(STDERR_FILENO, "Error: must run as root.\n", 25);
+		goto end;
+	}
 
 	jim = Jim_CreateInterp();
 	if (NULL == jim)

@@ -1,16 +1,18 @@
 proc log {level msg} {
-	set now [clock format [clock seconds] -format "%d/%m %H:%M:%S"]
-	puts -nonewline "\[$now\]<[format %-5s $level]>: "
-
 	switch -exact $level info {
-		puts $msg
+		set wrapped $msg
 	} warn {
-		puts "$msg (!)"
+		set wrapped "$msg (!)"
 	} error {
-		puts stderr "$msg!"
+		set wrapped "$msg!"
 	} debug {
-		puts "($msg)"
+		set wrapped "($msg)"
+	} default {
+		throw error "unknown verbosity level: $level"
 	}
+
+	set now [clock format [clock seconds] -format "%d/%m %H:%M:%S"]
+	puts "\[$now\]<[format %-5s $level]>: $wrapped"
 }
 
 proc install {curl repo packages entries name trigger key} {
@@ -27,7 +29,7 @@ proc install {curl repo packages entries name trigger key} {
 	# install the package dependencies, recursively
 	set dependencies $package(dependencies)
 	if {0 < [llength $dependencies]} {
-		log debug "installing the dependencie(s) of $name"
+		log debug "installing the dependencies of $name"
 		try {
 			foreach dependency $dependencies {
 				install $curl $repo $packages $entries $dependency dependency $key
@@ -279,12 +281,6 @@ proc usage {err} {
 proc main {} {
 	if {2 > $::argc} {
 		usage "update|available|installed|install|remove|lock|source|purge \[ARG\]..."
-	}
-
-	set ids [os.getids]
-	if {0 != $ids(euid)} {
-		puts stderr "Error: must run as root."
-		exit 1
 	}
 
 	set env [env]
