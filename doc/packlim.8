@@ -4,7 +4,7 @@
 \- a package manager
 .SH SYNOPSIS
 .B packlim
-update|available|installed|install|remove|lock|source [ARG]...
+update|available|installed|install|remove|lock|source|purge [ARG]...
 .SH DESCRIPTION
 Manages software packages.
 .TP
@@ -28,6 +28,9 @@ Prevent a package from being removed.
 .TP
 .B source
 Runs a script.
+.TP
+.B purge
+Removes downloaded files.
 .SH FILES
 .TP
 .B /etc/packlim/pub_key
@@ -48,17 +51,6 @@ The package repository URL.
 .TP
 .B PREFIX
 The package installation directory.
-.TP
-.B LOG
-The log verbosity level (
-.B debug
-,
-.B info
-,
-.B warning
-or
-.B error
-).
 .SH "SEE ALSO"
 .B dir2pkg(1)
 .SH AUTHOR

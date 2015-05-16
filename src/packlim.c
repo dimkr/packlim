@@ -1,51 +1,68 @@
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <jim.h>
 #include <curl/curl.h>
-
-#include "wait.h"
-#include "log.h"
-#include "repository.h"
-#include "package.h"
 
 static const char packlim_tcl[] = {
 #include "packlim.inc"
 };
 
+extern int Jim_LockfLockCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
+extern int Jim_LockfTestCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
+extern int Jim_Ed25519VerifyCmd(Jim_Interp *interp,
+                                int argc,
+                                Jim_Obj *const *argv);
+extern int Jim_TarListCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
+extern int Jim_TarExtractCmd(Jim_Interp *interp,
+                             int argc,
+                             Jim_Obj *const *argv);
+extern int Jim_CurlCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
+
 static int Jim_packlimInit(Jim_Interp *jim)
 {
+	Jim_CreateCommand(jim,
+	                  "lockf.lock",
+	                  Jim_LockfLockCmd,
+	                  NULL,
+	                  NULL);
+	Jim_CreateCommand(jim,
+	                  "lockf.locked",
+	                  Jim_LockfTestCmd,
+	                  NULL,
+	                  NULL);
+	Jim_CreateCommand(jim,
+	                  "ed25519.verify",
+	                  Jim_Ed25519VerifyCmd,
+	                  NULL,
+	                  NULL);
+	Jim_CreateCommand(jim,
+	                  "tar.list",
+	                  Jim_TarListCmd,
+	                  NULL,
+	                  NULL);
+	Jim_CreateCommand(jim,
+	                  "tar.extract",
+	                  Jim_TarExtractCmd,
+	                  NULL,
+	                  NULL);
+	Jim_CreateCommand(jim,
+	                  "curl",
+	                  Jim_CurlCmd,
+	                  NULL,
+	                  NULL);
+
 	if (JIM_OK != Jim_PackageProvide(jim, "packlim", VERSION, JIM_ERRMSG))
 		return JIM_ERR;
-
 	if (JIM_OK != Jim_EvalSource(jim, "packlim.inc", 1, packlim_tcl))
 		return JIM_ERR;
-
-	Jim_CreateCommand(jim,
-	                  "packlim.wait",
-	                  Jim_PacklimWaitCmd,
-	                  NULL,
-	                  NULL);
-	Jim_CreateCommand(jim,
-	                  "packlim.log",
-	                  Jim_PacklimLogCmd,
-	                  NULL,
-	                  NULL);
-	Jim_CreateCommand(jim,
-	                  "packlim.repository",
-	                  Jim_PacklimRepositoryCmd,
-	                  NULL,
-	                  NULL);
-	Jim_CreateCommand(jim,
-	                  "packlim.package",
-	                  Jim_PacklimPackageCmd,
-	                  NULL,
-	                  NULL);
 
 	return JIM_OK;
 }
 
 int main(int argc, char *argv[])
 {
+	const char *prefix;
 	Jim_Interp *jim;
 	Jim_Obj *argv_obj;
 	int i;
@@ -75,7 +92,15 @@ int main(int argc, char *argv[])
 	if (0 != curl_global_init(CURL_GLOBAL_NOTHING))
 		goto free_jim;
 
-	Jim_Eval(jim, "packlim_main");
+	prefix = getenv("PREFIX");
+	if (NULL != prefix) {
+		if (-1 == chroot(prefix))
+			goto free_jim;
+		if (-1 == chdir("/"))
+			goto free_jim;
+	}
+
+	Jim_Eval(jim, "main");
 
 	ret = Jim_GetExitCode(jim);
 

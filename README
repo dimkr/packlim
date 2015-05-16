@@ -8,14 +8,14 @@
 Overview
 ========
 
-packlim is a lightweight, permissively-licensed package manager for Linux
-(https://www.kernel.org/) distributions.
+packlim is a small, lightweight, hackable and permissively-licensed package
+manager for Linux (https://www.kernel.org/) distributions.
 
 packlim's performance-critical parts are written in C and the rest (mostly
-logic) in written in Tcl, using Jim (http://jim.tcl.tk/). Native code provides
-speed, while exceptions and garbage collection improve error handling and
-resource efficiency. Also, the use of a scripting language greatly reduces the
-amount of code.
+logic and I/O) in written in Tcl, using Jim (http://jim.tcl.tk/). Native code
+provides speed, while exceptions and garbage collection improve error handling
+and resource efficiency. Also, the use of a scripting language greatly reduces
+the amount of code.
 
 packlim is the successor to packlad (https://github.com/dimkr/packlad), which
 tries to achieve the same goals using C code alone.
@@ -27,30 +27,37 @@ Features
   - Package removal, with automatic cleanup of unneeded packages
   - Support for digitally-signed packages, with quick verification
   - Support for multiple compression algorithms
-  - Support for installing packages to a prefix other than /
+  - Support for installing packages to a prefix other than /, via chroot()
   - A scripting interface
 
 Scripting Interface
 ===================
 
-packlim allows complex package management tasks, using an object-oriented Tcl
-API.
+packlim allows complex package management tasks, using a Tcl API. In addition,
+it wraps the libraries it depends on with Tcl commands.
 
 For example:
-  1) To connect to a repository, create a new repository object:
-    set repo [packlim.repository http://repository]
+  1) To list the packages available in a repository:
+    puts [available [curl] http://repository]
 
-  2) To remove a package, call packlim.remove:
-    packlim.remove ca-certificates /tmp
+  2) To remove a package:
+    remove ca-certificates [installed]
 
-packlim uses all API internally as well; see packlim's implementation for more
-usage examples.
+  3) To list the files contained in a tar archive:
+    tar.list /path/to/tar
+
+  4) To download a file:
+    set session [curl]
+    $session get http://some/file /some/path
+
+packlim uses all API internally as well; see its implementation for more usage
+examples.
 
 Missing Features
 ================
 
   - Support for multiple repositories - packlim is designed for small
-    distributions with one repository per architecture,
+    distributions with one repository per architecture
   - Support for multiple architectures in one repository
 
 Dependencies
