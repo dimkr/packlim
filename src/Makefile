@@ -10,6 +10,7 @@ VERSION = 1.0
 CFLAGS += -std=gnu99 \
           -Wall \
           -pedantic \
+          -Wno-overlength-strings \
           -DVERSION=\"$(VERSION)\"
 
 LIBS += -ljim -led25519
@@ -22,29 +23,22 @@ LIBARCHIVE_LIBS = $(shell $(PKG_CONFIG) --libs libarchive)
 
 SRCS = $(wildcard *.c)
 OBJECTS = $(SRCS:.c=.o)
-HEADERS = $(wildcard *.h)
-TCLS = $(wildcard *.tcl)
 
 all: packlim
 
-packlim.inc: $(TCLS)
-	for tcl in $^; do \
-		sed -e s~'\\'~'\\\\'~g -e s~'"'~'\\"'~g -e s~'^'~'"'~g -e s~'$$'~'\\n" \\'~g $$tcl >> $@; \
-		echo '"\\n" \\' >> $@; \
-	done
-	echo \"\" >> $@
+jim-tar.o: jim-tar.c
+	$(CC) -c -o $@ $< $(CFLAGS) $(LIBARCHIVE_CFLAGS)
 
-packlim.o: packlim.c packlim.inc $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS)
-
-repo.o: repo.c repo.h
+jim-curl.o: jim-curl.c
 	$(CC) -c -o $@ $< $(CFLAGS) $(CURL_CFLAGS)
 
-log.o: log.c log.h
-	$(CC) -c -o $@ $< $(CFLAGS)
+packlim.inc: packlim.tcl
+	sed -e s~'\\'~'\\\\'~g -e s~'"'~'\\"'~g -e s~'^'~'"'~g -e s~'$$'~'\\n" \\'~g $^ >> $@; \
+	echo '"\\n" \\' >> $@; \
+	echo \"\" >> $@
 
-package.o: package.c package.h
-	$(CC) -c -o $@ $< $(CFLAGS) $(LIBARCHIVE_CFLAGS)
+packlim.o: packlim.c packlim.inc
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 %.o: %.c
 	$(CC) -c -o $@ $< $(CFLAGS)
@@ -53,4 +47,4 @@ packlim: $(OBJECTS)
 	$(CC) -o $@ $^ $(LDFLAGS) $(CURL_LIBS) $(LIBARCHIVE_LIBS) $(LIBS)
 
 clean:
-	rm -f packlim $(OBJECTS) packlim.inc
+	rm -f packlim packlim.inc $(OBJECTS)
