@@ -41,8 +41,12 @@ int Jim_LockfLockCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	}
 
 	path = Jim_GetString(argv[1], &len);
-	if (0 == len)
+	if (0 == len) {
+		Jim_SetResultString(interp,
+		                    "the lock file path cannot be an empty string",
+		                    -1);
 		goto end;
+	}
 
 	lock = Jim_Alloc(sizeof(*lock));
 	if (NULL == lock)
@@ -55,11 +59,15 @@ int Jim_LockfLockCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	lock->fd = open(path,
 	                O_WRONLY | O_CREAT,
 	                S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-	if (-1 == lock->fd)
+	if (-1 == lock->fd) {
+		Jim_SetResultFormatted(interp, "failed to open %s", path);
 		goto free_path;
+	}
 
-	if (-1 == lockf(lock->fd, F_LOCK, 0))
+	if (-1 == lockf(lock->fd, F_LOCK, 0)) {
+		Jim_SetResultFormatted(interp, "failed to lock %s", path);
 		goto close_fd;
+	}
 
 	Jim_CreateCommand(interp,
 	                  path,
@@ -94,8 +102,12 @@ int Jim_LockfTestCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	}
 
 	path = Jim_GetString(argv[1], &len);
-	if (0 == len)
+	if (0 == len) {
+		Jim_SetResultString(interp,
+		                    "the lock file path cannot be an empty string",
+		                    -1);
 		goto end;
+	}
 
 	locked = 0;
 
@@ -103,14 +115,20 @@ int Jim_LockfTestCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	if (-1 == fd) {
 		if (ENOENT == errno)
 			goto set_result;
+
+		Jim_SetResultFormatted(interp, "failed to open %s", path);
 		goto end;
 	}
 
 	if (0 == lockf(fd, F_TEST, 0))
 		goto set_result;
 
-	if ((EAGAIN != errno) && (EACCES != errno))
+	if ((EAGAIN != errno) && (EACCES != errno)) {
+		Jim_SetResultFormatted(interp,
+		                       "failed to check whether %s is locked",
+		                       path);
 		goto close_fd;
+	}
 
 	locked = 1;
 

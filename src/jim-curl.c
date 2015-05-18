@@ -6,14 +6,19 @@
 
 #define USER_AGENT "packlim/"VERSION
 
-static int fetch_file(CURL *curl, const char *url, const char *path)
+static int get_file(Jim_Interp *interp,
+                    CURL *curl,
+                    const char *url,
+                    const char *path)
 {
 	FILE *fh;
 	CURLcode code;
 
 	fh = fopen(path, "w");
-	if (NULL == fh)
+	if (NULL == fh) {
+		Jim_SetResultFormatted(interp, "failed to open %s", path);
 		return JIM_ERR;
+	}
 
 	if (CURLE_OK != curl_easy_setopt(curl, CURLOPT_URL, url))
 		goto delete_file;
@@ -26,6 +31,8 @@ static int fetch_file(CURL *curl, const char *url, const char *path)
 
 	if (CURLE_OK == code)
 		return JIM_OK;
+
+	Jim_SetResultFormatted(interp, "failed to download %s", url);
 
 delete_file:
 	(void) unlink(path);
@@ -59,14 +66,20 @@ static int JimCurlHandlerCommand(Jim_Interp *interp,
 		return JIM_ERR;
 
 	url = Jim_GetString(argv[2], &len);
-	if (0 == len)
+	if (0 == len) {
+		Jim_SetResultString(interp, "the URL cannot be an empty string", -1);
 		return JIM_ERR;
+	}
 
 	path = Jim_GetString(argv[3], &len);
-	if (0 == len)
+	if (0 == len) {
+		Jim_SetResultString(interp,
+		                    "the destination path cannot be an empty string",
+		                    -1);
 		return JIM_ERR;
+	}
 
-	return fetch_file(curl, url, path);
+	return get_file(interp, curl, url, path);
 }
 
 static void JimCurlDelProc(Jim_Interp *interp, void *privData)

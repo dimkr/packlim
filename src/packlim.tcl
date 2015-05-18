@@ -7,6 +7,8 @@ proc log {level msg} {
 		set wrapped "$msg!"
 	} debug {
 		set wrapped "($msg)"
+	} bug {
+		set wrapped "$msg (!!!)"
 	} default {
 		throw error "unknown verbosity level: $level"
 	}
@@ -30,14 +32,14 @@ proc install {curl repo packages entries name trigger key} {
 	set dependencies $package(dependencies)
 	if {0 < [llength $dependencies]} {
 		log debug "installing the dependencies of $name"
-		try {
-			foreach dependency $dependencies {
+		foreach dependency $dependencies {
+			try {
 				install $curl $repo $packages $entries $dependency dependency $key
+			} on error {msg opts} {
+				log error $msg
+				cleanup
+				throw error "cannot install $name"
 			}
-		} on error {msg opts} {
-			log debug "cannot install $name"
-			cleanup
-			throw error $msg
 		}
 	}
 
@@ -95,9 +97,10 @@ proc install {curl repo packages entries name trigger key} {
 		log info "extracting $file_name"
 		tar.extract $tar
 	} on error {msg opts} {
-		log error "failed to install $name"
+		log error $msg
 		remove_force $name
 		cleanup
+		throw error "failed to install $name"
 	}
 }
 
@@ -123,21 +126,12 @@ proc installed {} {
 
 # removes a package without any safety checks
 proc remove_force {name} {
-	log info "removing $name"
-
 	set path "/var/packlim/installed/$name/files"
-
 	if {[file exists $path]} {
 		# read the list of files installed by the package
 		set fp [open $path r]
 		set files [lreverse [split [$fp read -nonewline] \n]]
 		$fp close
-
-		# read the package file name
-		set fp [open "/var/packlim/installed/$name/entry" r]
-		set entry [$fp read -nonewline]
-		$fp close
-		set package [parse $entry]
 
 		# delete all files, in reverse order
 		foreach file $files {
@@ -151,11 +145,20 @@ proc remove_force {name} {
 		}
 	}
 
+	# read the package entry, to obtain its file name
+	set path "/var/packlim/installed/$name/entry"
+	if {[file exists $path]} {
+		set fp [open $path r]
+		set entry [$fp read -nonewline]
+		$fp close
+		set package [parse $entry]
+
+		# delete the downloaded package
+		file delete "/var/packlim/downloaded/$package(file_name)"
+	}
+
 	# remove the package installation data
 	file delete -force "/var/packlim/installed/$name"
-
-	# delete the downloaded package
-	file delete "/var/packlim/downloaded/$package(file_name)"
 }
 
 proc needed {name installed} {
@@ -187,6 +190,7 @@ proc remove {name installed} {
 		return
 	}
 
+	log info "removing $name"
 	remove_force $name
 	cleanup
 }
@@ -205,6 +209,7 @@ proc cleanup {} {
 			}
 
 			if {![needed $name $installed]} {
+				log info "removing $name"
 				remove_force $name
 				incr count
 			}
@@ -278,6 +283,14 @@ proc usage {err} {
 	exit 1
 }
 
+proc get_repo {env} {
+	try {
+		return $env(REPO)
+	} on error {msg opts} {
+		throw error "REPO is not set"
+	}
+}
+
 proc main {} {
 	if {2 > $::argc} {
 		usage "update|available|installed|install|remove|lock|source|purge \[ARG\]..."
@@ -297,13 +310,13 @@ proc main {} {
 			usage update
 		}
 
-		update [curl] $env(REPO)
+		update [curl] [get_repo $env]
 	} available {
 		if {2 != $::argc} {
 			usage available
 		}
 
-		set packages [lindex [available [curl] $env(REPO)] 0]
+		set packages [lindex [available [curl] [get_repo $env]] 0]
 		foreach name [dict keys $packages] {
 			set package $packages($name)
 			puts "$package(name)|$package(version)|$package(description)"
@@ -323,15 +336,17 @@ proc main {} {
 			usage "install NAME"
 		}
 
-		if {[file exists /etc/packlim/pub_key]} {
-			set fp [open /etc/packlim/pub_key r]
+		set path /etc/packlim/pub_key
+		if {![file exists $path]} {
+			log error "failed to read the public key"
+			exit 1
+		} else {
+			set fp [open $path r]
 			set key [$fp read -nonewline]
 			$fp close
-		} else {
-			set key ""
 		}
 
-		set repo $env(REPO)
+		set repo [get_repo $env]
 		set curl [curl]
 		set available [available $curl $repo]
 
@@ -362,5 +377,18 @@ proc main {} {
 		purge
 	} default {
 		usage "update|available|installed|install|remove|lock|source|purge \[ARG\]..."
+	}
+}
+
+proc main_wrapper {} {
+	try {
+		main
+	} on error {msg opts} {
+		if {0 < [string length $msg]} {
+			log error $msg
+		} else {
+			log bug "caught an unknown, unhandled exception"
+		}
+		exit 1
 	}
 }

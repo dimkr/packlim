@@ -39,17 +39,19 @@ static int extract_file(struct archive *in,
 				                                           blk,
 				                                           size,
 				                                           off))
-					return JIM_ERR;
+					goto error;
 				break;
 
 			case ARCHIVE_EOF:
 				return JIM_OK;
 
 			default:
-				return JIM_ERR;
+				goto error;
 		}
 	} while (1);
 
+error:
+	Jim_SetResultFormatted(interp, "failed to extract %s", path);
 	return JIM_ERR;
 }
 
@@ -101,10 +103,10 @@ static int iter_files(unsigned char *data,
 
 			case ARCHIVE_EOF:
 				ret = JIM_OK;
-
-				/* fall through */
+				goto close_out;
 
 			default:
+				Jim_SetResultString(interp, "failed to read a file header", -1);
 				goto close_out;
 		}
 
@@ -113,15 +115,21 @@ static int iter_files(unsigned char *data,
 			break;
 
 		/* make sure all paths begin with "./" */
-		if (0 != strncmp("./", path, 2))
+		if (0 != strncmp("./", path, 2)) {
+			Jim_SetResultFormatted(interp,
+			                       "read an invalid file path: %s",
+			                       path);
 			break;
+		}
 
 		/* ignore the root directory */
 		if (0 == strcmp("./", path))
 			continue;
 
-		if (ARCHIVE_OK != archive_write_header(out, entry))
+		if (ARCHIVE_OK != archive_write_header(out, entry)) {
+			Jim_SetResultString(interp, "failed to write a file header", -1);
 			break;
+		}
 
 		if (JIM_OK != cb(in, out, interp, arg, &path[1]))
 			break;
@@ -138,6 +146,23 @@ end:
 	return ret;
 }
 
+static int check_len(Jim_Interp *interp,
+                     Jim_Obj *obj,
+                     unsigned char **data,
+                     int *len)
+{
+	*data = (unsigned char *) Jim_GetString(obj, len);
+
+	/* a tar block is 512 bytes and there must be at least one headers block and
+	 * one file data block */
+	if (1024 > *len) {
+		Jim_SetResultString(interp, "the archive is too small to be valid", -1);
+		return JIM_ERR;
+	}
+
+	return JIM_OK;
+}
+
 int Jim_TarListCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	Jim_Obj *files;
@@ -149,9 +174,7 @@ int Jim_TarListCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		return JIM_ERR;
 	}
 
-	data = (unsigned char *) Jim_GetString(argv[1], &len);
-	/* we assume sizeof(size_t) >= sizeof(int) */
-	if ((0 >= len) || (UINT_MAX < len))
+	if (JIM_ERR == check_len(interp, argv[1], &data, &len))
 		return JIM_ERR;
 
 	files = Jim_NewListObj(interp, NULL, 0);
@@ -178,8 +201,7 @@ int Jim_TarExtractCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		return JIM_ERR;
 	}
 
-	data = (unsigned char *) Jim_GetString(argv[1], &len);
-	if ((0 >= len) || (UINT_MAX < len))
+	if (JIM_ERR == check_len(interp, argv[1], &data, &len))
 		return JIM_ERR;
 
 	if (JIM_ERR == iter_files(data,

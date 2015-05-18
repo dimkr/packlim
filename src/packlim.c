@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 			goto free_jim;
 	}
 
-	Jim_Eval(jim, "main");
+	Jim_Eval(jim, "main_wrapper");
 
 	ret = Jim_GetExitCode(jim);
 

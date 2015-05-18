@@ -12,19 +12,25 @@ int Jim_Ed25519VerifyCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	}
 
 	key = (const unsigned char *) Jim_GetString(argv[3], &len);
-	if (32 != len)
+	if (32 != len) {
+		Jim_SetResultString(interp, "the public key must be 32 bytes long", -1);
 		return JIM_ERR;
+	}
 
 	sig = (const unsigned char *) Jim_GetString(argv[2], &len);
-	if (64 != len)
+	if (64 != len) {
+		Jim_SetResultString(interp, "the signature must be 64 bytes long", -1);
 		return JIM_ERR;
+	}
 
 	data = (const unsigned char *) Jim_GetString(argv[1], &len);
-	if (0 == len)
+	if (0 == len) {
+		Jim_SetResultString(interp, "the data cannot be an empty buffer", -1);
 		return JIM_ERR;
+	}
 
 	if (0 == ed25519_verify(sig, data, (size_t) len, key)) {
-		Jim_SetResultString(interp, "invalid digital signature", -1);
+		Jim_SetResultString(interp, "the digital signature is invalid", -1);
 		return JIM_ERR;
 	}
 
