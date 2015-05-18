@@ -6,9 +6,7 @@ DOC_DIR ?= /usr/share/doc
 
 INSTALL = install -v
 
-all: src/packlim
-
-src/packlim:
+all:
 	cd src; $(MAKE)
 
 install: all
