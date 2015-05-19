@@ -33,15 +33,16 @@ Features
 Scripting Interface
 ===================
 
-packlim allows complex package management tasks, using a Tcl API. In addition,
-it wraps the libraries it depends on with Tcl commands.
+packlim allows complex package management tasks, using a Tcl API in the
+"packlim" namespace. In addition, it wraps the libraries it depends on with Tcl
+commands.
 
 For example:
   1) To list the packages available in a repository:
-    puts [available [curl] http://repository]
+    puts [packlim::available [curl] http://repository]
 
   2) To remove a package:
-    remove ca-certificates [installed]
+    packlim::remove ca-certificates [packlim::installed]
 
   3) To list the files contained in a tar archive:
     tar.list /path/to/tar

@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-proc log {level msg} {
+proc ::packlim::log {level msg} {
 	switch -exact $level info {
 		set wrapped $msg
 	} warn {
@@ -39,10 +39,10 @@ proc log {level msg} {
 	puts "\[$now\]<[format %-5s $level]>: $wrapped"
 }
 
-proc install {curl repo packages entries name trigger key} {
+proc ::packlim::install {curl repo packages entries name trigger key} {
 	# if the package is already installed, do nothing
 	if {[file exists "/var/packlim/installed/$name/entry"]} {
-		log warn "$name is already installed"
+		packlim::log warn "$name is already installed"
 		return
 	}
 
@@ -56,10 +56,10 @@ proc install {curl repo packages entries name trigger key} {
 		log debug "installing the dependencies of $name"
 		foreach dependency $dependencies {
 			try {
-				install $curl $repo $packages $entries $dependency dependency $key
+				packlim::install $curl $repo $packages $entries $dependency dependency $key
 			} on error {msg opts} {
-				log error $msg
-				cleanup
+				packlim::log error $msg
+				packlim::cleanup
 				throw error "cannot install $name"
 			}
 		}
@@ -69,14 +69,14 @@ proc install {curl repo packages entries name trigger key} {
 	set file_name $package(file_name)
 	set path "/var/packlim/downloaded/$file_name"
 	file mkdir /var/packlim/downloaded
-	log info "downloading $file_name"
+	packlim::log info "downloading $file_name"
 	$curl get "$repo/$file_name" $path
 
 	try {
 		# read the package contents
 		log debug "reading $file_name"
 
-		with_file fp $path r {
+		packlim::with_file fp $path r {
 			set tar [$fp read [expr [file size $path] - 68]]
 			set magic [$fp read 4]
 			set signature [$fp read 64]
@@ -89,51 +89,51 @@ proc install {curl repo packages entries name trigger key} {
 
 		# verify the package digital signature, using the public key
 		if {0 == [string bytelength $key]} {
-			log warn "skipping the verification of $file_name"
+			packlim::log warn "skipping the verification of $file_name"
 		} else {
-			log info "verifying $file_name"
+			packlim::log info "verifying $file_name"
 			ed25519.verify $tar $signature $key
 		}
 
 		# list the package contents
-		log info "registering $name"
+		packlim::log info "registering $name"
 		set files [tar.list $tar]
 
 		file mkdir "/var/packlim/installed/$name"
 
 		# save the file list
-		with_file fp "/var/packlim/installed/$name/files" w {
+		packlim::with_file fp "/var/packlim/installed/$name/files" w {
 			$fp puts [join $files \n]
 		}
 
 		# save the package entry
-		with_file fp "/var/packlim/installed/$name/entry" w {
+		packlim::with_file fp "/var/packlim/installed/$name/entry" w {
 			$fp puts $entries($name)
 		}
 
 		# save the package installation trigger
-		with_file fp "/var/packlim/installed/$name/trigger" w {
+		packlim::with_file fp "/var/packlim/installed/$name/trigger" w {
 			$fp puts $trigger
 		}
 
 		# extract the tar archive contained in the package
-		log info "extracting $file_name"
+		packlim::log info "extracting $file_name"
 		tar.extract $tar
 	} on error {msg opts} {
-		log error $msg
-		remove_force $name
-		cleanup
+		packlim::log error $msg
+		packlim::remove_force $name
+		packlim::cleanup
 		throw error "failed to install $name"
 	}
 }
 
-proc installed {} {
+proc ::packlim::installed {} {
 	set installed [dict create]
 
 	foreach path [glob -nocomplain -directory "/var/packlim/installed" *] {
-		with_file fp "$path/trigger" r {set trigger [$fp read -nonewline]}
-		with_file fp "$path/entry" r {set entry [$fp read -nonewline]}
-		set package [parse $entry]
+		packlim::with_file fp "$path/trigger" r {set trigger [$fp read -nonewline]}
+		packlim::with_file fp "$path/entry" r {set entry [$fp read -nonewline]}
+		set package [packlim::parse $entry]
 
 		dict set installed $package(name) [list $package $trigger]
 	}
@@ -142,11 +142,11 @@ proc installed {} {
 }
 
 # removes a package without any safety checks
-proc remove_force {name} {
+proc ::packlim::remove_force {name} {
 	set path "/var/packlim/installed/$name/files"
 	if {[file exists $path]} {
 		# read the list of files installed by the package
-		with_file fp $path r {
+		packlim::with_file fp $path r {
 			set files [lreverse [split [$fp read -nonewline] \n]]
 		}
 
@@ -165,8 +165,8 @@ proc remove_force {name} {
 	# read the package entry, to obtain its file name
 	set path "/var/packlim/installed/$name/entry"
 	if {[file exists $path]} {
-		with_file fp $path r {set entry [$fp read -nonewline]}
-		set package [parse $entry]
+		packlim::with_file fp $path r {set entry [$fp read -nonewline]}
+		set package [packlim::parse $entry]
 
 		# delete the downloaded package
 		file delete "/var/packlim/downloaded/$package(file_name)"
@@ -176,7 +176,7 @@ proc remove_force {name} {
 	file delete -force "/var/packlim/installed/$name"
 }
 
-proc needed {name installed} {
+proc ::packlim::needed {name installed} {
 	foreach installed_package [dict keys $installed] {
 		set package [lindex $installed($installed_package) 0]
 		if {[lsearch -bool -exact $package(dependencies) $name]} {
@@ -188,34 +188,34 @@ proc needed {name installed} {
 }
 
 # safely removes a package
-proc remove {name installed} {
+proc ::packlim::remove {name installed} {
 	if {![file exists "/var/packlim/installed/$name/trigger"]} {
-		log warn "$name is not installed"
+		packlim::log warn "$name is not installed"
 		return
 	}
 
 	set trigger [lindex $installed($name) 1]
 	if {"user" ne $trigger} {
-		log error "$name cannot be removed; it is a $trigger package"
+		packlim::log error "$name cannot be removed; it is a $trigger package"
 		return 1
 	}
 
-	if {[needed $name $installed]} {
-		log error "$name cannot be removed; it is required by another package"
+	if {[packlim::needed $name $installed]} {
+		packlim::log error "$name cannot be removed; it is required by another package"
 		return
 	}
 
-	log info "removing $name"
-	remove_force $name
-	cleanup
+	packlim::log info "removing $name"
+	packlim::remove_force $name
+	packlim::cleanup
 }
 
-proc cleanup {} {
+proc ::packlim::cleanup {} {
 	log debug "removing unneeded packages"
 
 	while {1} {
 		set count 0
-		set installed [installed]
+		set installed [packlim::installed]
 
 		foreach name [dict keys $installed] {
 			# automatically remove only dependency packages
@@ -223,9 +223,9 @@ proc cleanup {} {
 				continue
 			}
 
-			if {![needed $name $installed]} {
-				log info "removing $name"
-				remove_force $name
+			if {![packlim::needed $name $installed]} {
+				packlim::log info "removing $name"
+				packlim::remove_force $name
 				incr count
 			}
 		}
@@ -236,12 +236,12 @@ proc cleanup {} {
 	}
 }
 
-proc update {curl repo} {
-	log info "updating the package list"
+proc ::packlim::update {curl repo} {
+	packlim::log info "updating the package list"
 	$curl get "$repo/available" /var/packlim/available
 }
 
-proc parse {entry} {
+proc ::packlim::parse {entry} {
 	set fields [split $entry |]
 
 	set package [dict create]
@@ -254,7 +254,7 @@ proc parse {entry} {
 	return $package
 }
 
-proc with_file {fp path access script} {
+proc ::packlim::with_file {fp path access script} {
 	upvar 1 $fp my_fp
 
 	try {
@@ -266,22 +266,22 @@ proc with_file {fp path access script} {
 	}
 }
 
-proc available {curl repo} {
+proc ::packlim::available {curl repo} {
 	set list /var/packlim/available
 
 	# if the package list is missing, fetch it
 	if {![file exists $list]} {
-		update $curl $repo
+		packlim::update $curl $repo
 	}
 
 	# parse the package list
-	with_file fp $list r {set entries [string trimright [$fp read]]}
+	packlim::with_file fp $list r {set entries [string trimright [$fp read]]}
 
 	set packages [dict create]
 	set raw [dict create]
 
 	foreach entry [lmap i [split $entries \n] {string trimright $i}] {
-		set package [parse $entry]
+		set package [packlim::parse $entry]
 		set name $package(name)
 		dict set packages $name $package
 		dict set raw $name $entry
@@ -290,15 +290,15 @@ proc available {curl repo} {
 	list $packages $raw
 }
 
-proc purge {} {
-	log info "purging unwanted files"
+proc ::packlim::purge {} {
+	packlim::log info "purging unwanted files"
 	file delete /var/packlim/available
 	file delete -force /var/packlim/downloaded
 }
 
-proc lock {name} {
-	log info "locking $name"
-	with_file fp "/var/packlim/installed/$name/trigger" w {$fp puts locked}
+proc ::packlim::lock {name} {
+	packlim::log info "locking $name"
+	packlim::with_file fp "/var/packlim/installed/$name/trigger" w {$fp puts locked}
 }
 
 proc usage {err} {
@@ -311,105 +311,5 @@ proc get_repo {env} {
 		return $env(REPO)
 	} on error {msg opts} {
 		throw error "REPO is not set"
-	}
-}
-
-proc main {} {
-	if {2 > $::argc} {
-		usage "update|available|installed|install|remove|lock|source|purge \[ARG\]..."
-	}
-
-	set env [env]
-	file mkdir /var/packlim /var/packlim/installed
-
-	# wait for other instances to terminate
-	if {[lockf.locked /var/packlim/lock]} {
-		log warn "another instance is running; waiting"
-	}
-	set lock [lockf.lock /var/packlim/lock]
-
-	switch -exact [lindex $::argv 1] update {
-		if {2 != $::argc} {
-			usage update
-		}
-
-		update [curl] [get_repo $env]
-	} available {
-		if {2 != $::argc} {
-			usage available
-		}
-
-		set packages [lindex [available [curl] [get_repo $env]] 0]
-		foreach name [dict keys $packages] {
-			set package $packages($name)
-			puts "$package(name)|$package(version)|$package(description)"
-		}
-	} installed {
-		if {2 != $::argc} {
-			usage installed
-		}
-
-		set packages [installed]
-		foreach name [dict keys $packages] {
-			set package [lindex $packages($name) 0]
-			puts "$package(name)|$package(version)|$package(description)"
-		}
-	} install {
-		if {3 != $::argc} {
-			usage "install NAME"
-		}
-
-		set path /etc/packlim/pub_key
-		if {![file exists $path]} {
-			log error "failed to read the public key"
-			exit 1
-		} else {
-			with_file fp $path r {set key [$fp read -nonewline]}
-		}
-
-		set repo [get_repo $env]
-		set curl [curl]
-		set available [available $curl $repo]
-
-		install $curl $repo {*}$available [lindex $::argv 2] user $key
-	} remove {
-		if {3 != $::argc} {
-			usage "remove NAME"
-		}
-
-		remove [lindex $::argv 2] [installed]
-	} lock {
-		if {3 != $::argc} {
-			usage "lock NAME"
-		}
-
-		lock [lindex $::argv 2]
-	} source {
-		if {3 != $::argc} {
-			usage "source SCRIPT"
-		}
-
-		source [lindex $::argv 2]
-	} purge {
-		if {2 != $::argc} {
-			usage "purge"
-		}
-
-		purge
-	} default {
-		usage "update|available|installed|install|remove|lock|source|purge \[ARG\]..."
-	}
-}
-
-proc main_wrapper {} {
-	try {
-		main
-	} on error {msg opts} {
-		if {0 < [string length $msg]} {
-			log error $msg
-		} else {
-			log bug "caught an unknown, unhandled exception"
-		}
-		exit 1
 	}
 }

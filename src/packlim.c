@@ -40,12 +40,32 @@ extern int Jim_TarExtractCmd(Jim_Interp *interp,
                              Jim_Obj *const *argv);
 extern int Jim_CurlCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
 
-static const char packlim_tcl[] = {
-#include "packlim.inc"
+extern int Jim_packlimInit(Jim_Interp *interp);
+
+static const char main_tcl[] = {
+#include "main.inc"
 };
 
-static int Jim_packlimInit(Jim_Interp *jim)
+int main(int argc, char *argv[])
 {
+	const char *prefix;
+	Jim_Interp *jim;
+	Jim_Obj *argv_obj;
+	int i;
+	int ret = EXIT_FAILURE;
+
+	if (0 != geteuid()) {
+		(void) write(STDERR_FILENO, "Error: must run as root.\n", 25);
+		goto end;
+	}
+
+	jim = Jim_CreateInterp();
+	if (NULL == jim)
+		goto end;
+
+	Jim_RegisterCoreCommands(jim);
+	Jim_InitStaticExtensions(jim);
+
 	Jim_CreateCommand(jim,
 	                  "lockf.lock",
 	                  Jim_LockfLockCmd,
@@ -77,45 +97,6 @@ static int Jim_packlimInit(Jim_Interp *jim)
 	                  NULL,
 	                  NULL);
 
-	if (JIM_OK != Jim_PackageProvide(jim, "packlim", VERSION, JIM_ERRMSG))
-		return JIM_ERR;
-	if (JIM_OK != Jim_EvalSource(jim, "packlim.inc", 1, packlim_tcl))
-		return JIM_ERR;
-
-	return JIM_OK;
-}
-
-int main(int argc, char *argv[])
-{
-	const char *prefix;
-	Jim_Interp *jim;
-	Jim_Obj *argv_obj;
-	int i;
-	int ret = EXIT_FAILURE;
-
-	if (0 != geteuid()) {
-		(void) write(STDERR_FILENO, "Error: must run as root.\n", 25);
-		goto end;
-	}
-
-	jim = Jim_CreateInterp();
-	if (NULL == jim)
-		goto end;
-
-	Jim_RegisterCoreCommands(jim);
-	Jim_InitStaticExtensions(jim);
-
-	argv_obj = Jim_NewListObj(jim, NULL, 0);
-
-	for (i = 0; argc > i; ++i) {
-		Jim_ListAppendElement(jim,
-		                      argv_obj,
-		                      Jim_NewStringObj(jim, argv[i], -1));
-	}
-
-	Jim_SetVariableStr(jim, "argv", argv_obj);
-	Jim_SetVariableStr(jim, "argc", Jim_NewIntObj(jim, argc));
-
 	if (JIM_OK != Jim_packlimInit(jim))
 		goto free_jim;
 
@@ -130,8 +111,18 @@ int main(int argc, char *argv[])
 			goto free_jim;
 	}
 
-	Jim_Eval(jim, "main_wrapper");
+	argv_obj = Jim_NewListObj(jim, NULL, 0);
 
+	for (i = 0; argc > i; ++i) {
+		Jim_ListAppendElement(jim,
+		                      argv_obj,
+		                      Jim_NewStringObj(jim, argv[i], -1));
+	}
+
+	Jim_SetVariableStr(jim, "argv", argv_obj);
+	Jim_SetVariableStr(jim, "argc", Jim_NewIntObj(jim, argc));
+
+	Jim_Eval(jim, main_tcl);
 	ret = Jim_GetExitCode(jim);
 
 	curl_global_cleanup();

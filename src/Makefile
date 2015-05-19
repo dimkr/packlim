@@ -32,12 +32,15 @@ jim-tar.o: jim-tar.c
 jim-curl.o: jim-curl.c
 	$(CC) -c -o $@ $< $(CFLAGS) $(CURL_CFLAGS)
 
-packlim.inc: packlim.tcl
+%.inc: %.tcl
 	sed -e s~'\\'~'\\\\'~g -e s~'"'~'\\"'~g -e s~'^'~'"'~g -e s~'$$'~'\\n" \\'~g $^ >> $@; \
 	echo '"\\n" \\' >> $@; \
 	echo \"\" >> $@
 
-packlim.o: packlim.c packlim.inc
+jim-packlim.o: jim-packlim.c packlim.inc
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+packlim.o: packlim.c main.inc
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 %.o: %.c
@@ -47,4 +50,4 @@ packlim: $(OBJECTS)
 	$(CC) -o $@ $^ $(LDFLAGS) $(CURL_LIBS) $(LIBARCHIVE_LIBS) $(LIBS)
 
 clean:
-	rm -f packlim packlim.inc $(OBJECTS)
+	rm -f packlim main.inc packlim.inc $(OBJECTS)
