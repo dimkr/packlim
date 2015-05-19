@@ -40,7 +40,7 @@ jim-curl.o: jim-curl.c
 jim-packlim.o: jim-packlim.c packlim.inc
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-packlim.o: packlim.c main.inc
+main.o: main.c main.inc
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 %.o: %.c
