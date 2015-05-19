@@ -177,10 +177,8 @@ static int check_len(Jim_Interp *interp,
 {
 	*data = (unsigned char *) Jim_GetString(obj, len);
 
-	/* a tar block is 512 bytes and there must be at least one headers block and
-	 * one file data block */
-	if (1024 > *len) {
-		Jim_SetResultString(interp, "the archive is too small to be valid", -1);
+	if (0 == len) {
+		Jim_SetResultString(interp, "the archive is an empty file", -1);
 		return JIM_ERR;
 	}
 
