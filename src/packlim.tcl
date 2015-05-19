@@ -75,11 +75,12 @@ proc install {curl repo packages entries name trigger key} {
 	try {
 		# read the package contents
 		log debug "reading $file_name"
-		set fp [open $path r]
-		set tar [$fp read [expr [file size $path] - 68]]
-		set magic [$fp read 4]
-		set signature [$fp read 64]
-		$fp close
+
+		with_file fp $path r {
+			set tar [$fp read [expr [file size $path] - 68]]
+			set magic [$fp read 4]
+			set signature [$fp read 64]
+		}
 
 		# verify the magic number
 		if {"hjkl" ne $magic} {
@@ -101,19 +102,19 @@ proc install {curl repo packages entries name trigger key} {
 		file mkdir "/var/packlim/installed/$name"
 
 		# save the file list
-		set fp [open "/var/packlim/installed/$name/files" w]
-		$fp puts [join $files \n]
-		$fp close
+		with_file fp "/var/packlim/installed/$name/files" w {
+			$fp puts [join $files \n]
+		}
 
 		# save the package entry
-		set fp [open "/var/packlim/installed/$name/entry" w]
-		$fp puts $entries($name)
-		$fp close
+		with_file fp "/var/packlim/installed/$name/entry" w {
+			$fp puts $entries($name)
+		}
 
 		# save the package installation trigger
-		set fp [open "/var/packlim/installed/$name/trigger" w]
-		$fp puts $trigger
-		$fp close
+		with_file fp "/var/packlim/installed/$name/trigger" w {
+			$fp puts $trigger
+		}
 
 		# extract the tar archive contained in the package
 		log info "extracting $file_name"
@@ -130,14 +131,8 @@ proc installed {} {
 	set installed [dict create]
 
 	foreach path [glob -nocomplain -directory "/var/packlim/installed" *] {
-		set fp [open "$path/trigger" r]
-		set trigger [$fp read -nonewline]
-		$fp close
-
-		set fp [open "$path/entry" r]
-		set entry [$fp read -nonewline]
-		$fp close
-
+		with_file fp "$path/trigger" r {set trigger [$fp read -nonewline]}
+		with_file fp "$path/entry" r {set entry [$fp read -nonewline]}
 		set package [parse $entry]
 
 		dict set installed $package(name) [list $package $trigger]
@@ -151,9 +146,9 @@ proc remove_force {name} {
 	set path "/var/packlim/installed/$name/files"
 	if {[file exists $path]} {
 		# read the list of files installed by the package
-		set fp [open $path r]
-		set files [lreverse [split [$fp read -nonewline] \n]]
-		$fp close
+		with_file fp $path r {
+			set files [lreverse [split [$fp read -nonewline] \n]]
+		}
 
 		# delete all files, in reverse order
 		foreach file $files {
@@ -170,9 +165,7 @@ proc remove_force {name} {
 	# read the package entry, to obtain its file name
 	set path "/var/packlim/installed/$name/entry"
 	if {[file exists $path]} {
-		set fp [open $path r]
-		set entry [$fp read -nonewline]
-		$fp close
+		with_file fp $path r {set entry [$fp read -nonewline]}
 		set package [parse $entry]
 
 		# delete the downloaded package
@@ -261,6 +254,18 @@ proc parse {entry} {
 	return $package
 }
 
+proc with_file {fp path access script} {
+	upvar 1 $fp my_fp
+
+	try {
+		open $path $access
+	} on ok my_fp {
+		uplevel 1 $script
+	} finally {
+		$my_fp close
+	}
+}
+
 proc available {curl repo} {
 	set list /var/packlim/available
 
@@ -270,9 +275,7 @@ proc available {curl repo} {
 	}
 
 	# parse the package list
-	set fp [open $list r]
-	set entries [string trimright [$fp read]]
-	$fp close
+	with_file fp $list r {set entries [string trimright [$fp read]]}
 
 	set packages [dict create]
 	set raw [dict create]
@@ -295,9 +298,7 @@ proc purge {} {
 
 proc lock {name} {
 	log info "locking $name"
-	set fp [open "/var/packlim/installed/$name/trigger" w]
-	$fp puts locked
-	$fp close
+	with_file fp "/var/packlim/installed/$name/trigger" w {$fp puts locked}
 }
 
 proc usage {err} {
@@ -363,9 +364,7 @@ proc main {} {
 			log error "failed to read the public key"
 			exit 1
 		} else {
-			set fp [open $path r]
-			set key [$fp read -nonewline]
-			$fp close
+			with_file fp $path r {set key [$fp read -nonewline]}
 		}
 
 		set repo [get_repo $env]
