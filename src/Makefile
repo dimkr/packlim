@@ -33,8 +33,15 @@ jim-curl.o: jim-curl.c
 	$(CC) -c -o $@ $< $(CFLAGS) $(CURL_CFLAGS)
 
 %.inc: %.tcl
-	sed -e s~'\\'~'\\\\'~g -e s~'"'~'\\"'~g -e s~'^'~'"'~g -e s~'$$'~'\\n" \\'~g $^ >> $@; \
-	echo '"\\n" \\' >> $@; \
+	sed -e s~'^\t*'~~g \
+	    -e s~'\\'~'\\\\'~g \
+	    -e s~'"'~'\\"'~g \
+	    -e s~'^'~'"'~g \
+	    -e s~'$$'~'\\n" \\'~g \
+	    $^ | \
+	grep -v \
+	     -e ^\"\# \
+	     -e '^"\\n" \\' > $@; \
 	echo \"\" >> $@
 
 jim-packlim.o: jim-packlim.c packlim.inc
