@@ -48,7 +48,11 @@ proc ::packlim::install {curl repo packages entries name trigger key} {
 
 	# locate the package in the package list
 	log debug "searching the package list for $name"
-	set package $packages($name)
+	try {
+		set package $packages($name)
+	} on error {msg opts} {
+		throw error "failed to locate $name in the package list"
+	}
 
 	# install the package dependencies, recursively
 	set dependencies $package(dependencies)
@@ -238,7 +242,12 @@ proc ::packlim::cleanup {} {
 
 proc ::packlim::update {curl repo} {
 	packlim::log info "updating the package list"
-	$curl get "$repo/available" /var/packlim/available
+	try {
+		$curl get "$repo/available" /var/packlim/available
+	} on error {msg opts} {
+		file delete /var/packlim/available
+		throw error "failed to download the package list"
+	}
 }
 
 proc ::packlim::parse {entry} {
