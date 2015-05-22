@@ -59,13 +59,28 @@ int main(int argc, char *argv[])
 		goto end;
 	}
 
-	jim = Jim_CreateInterp();
-	if (NULL == jim)
+	prefix = getenv("PREFIX");
+	if (NULL != prefix) {
+		if (-1 == chroot(prefix))
+			goto end;
+	}
+
+	if (-1 == chdir("/"))
 		goto end;
 
-	Jim_RegisterCoreCommands(jim);
-	Jim_InitStaticExtensions(jim);
+	if (0 != curl_global_init(CURL_GLOBAL_NOTHING))
+		goto end;
 
+	jim = Jim_CreateInterp();
+	if (NULL == jim)
+		goto curl_cleanup;
+
+	Jim_RegisterCoreCommands(jim);
+
+	if (JIM_OK != Jim_packlimInit(jim))
+		goto free_jim;
+
+	Jim_InitStaticExtensions(jim);
 	Jim_CreateCommand(jim,
 	                  "lockf.lock",
 	                  Jim_LockfLockCmd,
@@ -97,21 +112,6 @@ int main(int argc, char *argv[])
 	                  NULL,
 	                  NULL);
 
-	if (JIM_OK != Jim_packlimInit(jim))
-		goto free_jim;
-
-	if (0 != curl_global_init(CURL_GLOBAL_NOTHING))
-		goto free_jim;
-
-	prefix = getenv("PREFIX");
-	if (NULL != prefix) {
-		if (-1 == chroot(prefix))
-			goto free_jim;
-	}
-
-	if (-1 == chdir("/"))
-		goto free_jim;
-
 	argv_obj = Jim_NewListObj(jim, NULL, 0);
 
 	for (i = 0; argc > i; ++i) {
@@ -126,6 +126,7 @@ int main(int argc, char *argv[])
 	Jim_Eval(jim, main_tcl);
 	ret = Jim_GetExitCode(jim);
 
+curl_cleanup:
 	curl_global_cleanup();
 
 free_jim:
