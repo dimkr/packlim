@@ -126,11 +126,11 @@ int main(int argc, char *argv[])
 	Jim_Eval(jim, main_tcl);
 	ret = Jim_GetExitCode(jim);
 
-curl_cleanup:
-	curl_global_cleanup();
-
 free_jim:
 	Jim_FreeInterp(jim);
+
+curl_cleanup:
+	curl_global_cleanup();
 
 end:
 	return ret;
