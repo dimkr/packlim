@@ -107,9 +107,10 @@ int main(int argc, char *argv[])
 	if (NULL != prefix) {
 		if (-1 == chroot(prefix))
 			goto free_jim;
-		if (-1 == chdir("/"))
-			goto free_jim;
 	}
+
+	if (-1 == chdir("/"))
+		goto free_jim;
 
 	argv_obj = Jim_NewListObj(jim, NULL, 0);
 
