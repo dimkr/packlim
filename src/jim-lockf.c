@@ -50,6 +50,7 @@ static int JimLockHandlerCommand(Jim_Interp *interp,
                                  int argc,
                                  Jim_Obj *const *argv)
 {
+	Jim_SetEmptyResult(interp);
 	return JIM_ERR;
 }
 
@@ -71,6 +72,8 @@ int Jim_LockfLockCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		                    -1);
 		goto end;
 	}
+
+	Jim_SetEmptyResult(interp);
 
 	lock = Jim_Alloc(sizeof(*lock));
 	if (NULL == lock)
@@ -132,6 +135,8 @@ int Jim_LockfTestCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		                    -1);
 		goto end;
 	}
+
+	Jim_SetEmptyResult(interp);
 
 	locked = 0;
 

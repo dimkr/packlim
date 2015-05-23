@@ -81,6 +81,8 @@ static int JimCurlHandlerCommand(Jim_Interp *interp,
 		return JIM_ERR;
 	}
 
+	Jim_SetEmptyResult(interp);
+
 	if (JIM_OK != Jim_GetEnum(interp,
 	                          argv[1],
 	                          options,
@@ -120,6 +122,8 @@ int Jim_CurlCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		Jim_WrongNumArgs(interp, 1, argv, "");
 		goto end;
 	}
+
+	Jim_SetEmptyResult(interp);
 
 	curl = curl_easy_init();
 	if (NULL == curl)

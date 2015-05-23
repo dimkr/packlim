@@ -196,6 +196,8 @@ int Jim_TarListCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		return JIM_ERR;
 	}
 
+	Jim_SetEmptyResult(interp);
+
 	if (JIM_ERR == check_len(interp, argv[1], &data, &len))
 		return JIM_ERR;
 
@@ -223,6 +225,8 @@ int Jim_TarExtractCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		return JIM_ERR;
 	}
 
+	Jim_SetEmptyResult(interp);
+
 	if (JIM_ERR == check_len(interp, argv[1], &data, &len))
 		return JIM_ERR;
 
@@ -232,8 +236,6 @@ int Jim_TarExtractCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	                          extract_file,
 	                          NULL))
 		return JIM_ERR;
-
-	Jim_SetEmptyResult(interp);
 
 	return JIM_OK;
 }
