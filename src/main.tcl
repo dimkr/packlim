@@ -47,9 +47,13 @@ proc main {} {
 			usage available
 		}
 
-		set packages [lindex [packlim::available [curl] [get_repo $env]] 0]
-		foreach name [dict keys $packages] {
-			set package $packages($name)
+		set installed [packlim::installed]
+		set available [lindex [packlim::available [curl] [get_repo $env]] 0]
+		foreach name [dict keys $available] {
+			if {[dict exists $installed $name]} {
+				continue
+			}
+			set package $available($name)
 			puts "$package(name)|$package(version)|$package(description)"
 		}
 	} installed {
@@ -60,10 +64,12 @@ proc main {} {
 		set packages [packlim::installed]
 		foreach name [dict keys $packages] {
 			set package [lindex $packages($name) 0]
-			puts "$package(name)|$package(version)|$package(description)"
+			if {"dependency" ne [lindex $packages($name) 1]} {
+				puts "$package(name)|$package(version)|$package(description)"
+			}
 		}
 	} install {
-		if {3 != $::argc} {
+		if {3 > $::argc} {
 			usage "install NAME"
 		}
 
@@ -79,13 +85,17 @@ proc main {} {
 		set curl [curl]
 		set available [packlim::available $curl $repo]
 
-		packlim::install $curl $repo {*}$available [lindex $::argv 2] user $key
+		foreach package [lrange $::argv 2 end] {
+			packlim::install $curl $repo {*}$available $package user $key
+		}
 	} remove {
-		if {3 != $::argc} {
+		if {3 > $::argc} {
 			usage "remove NAME"
 		}
 
-		packlim::remove [lindex $::argv 2] [packlim::installed]
+		foreach package [lrange $::argv 2 end] {
+			packlim::remove $package [packlim::installed]
+		}
 	} lock {
 		if {3 != $::argc} {
 			usage "lock NAME"
