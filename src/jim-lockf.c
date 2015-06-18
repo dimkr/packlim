@@ -121,7 +121,7 @@ end:
 int Jim_LockfTestCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	const char *path;
-	int len, fd, locked, ret = JIM_ERR;
+	int len, fd, ret = JIM_ERR;
 
 	if (2 != argc) {
 		Jim_WrongNumArgs(interp, 1, argv, "path");
@@ -138,19 +138,23 @@ int Jim_LockfTestCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 	Jim_SetEmptyResult(interp);
 
-	locked = 0;
-
 	fd = open(path, O_RDONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (-1 == fd) {
-		if (ENOENT == errno)
-			goto set_result;
+		if (ENOENT != errno)
+			Jim_SetResultFormatted(interp, "failed to open %s", path);
+		else {
+			Jim_SetResultBool(interp, 0);
+			ret = JIM_OK;
+		}
 
-		Jim_SetResultFormatted(interp, "failed to open %s", path);
 		goto end;
 	}
 
-	if (0 == lockf(fd, F_TEST, 0))
-		goto set_result;
+	if (0 == lockf(fd, F_TEST, 0)) {
+		Jim_SetResultBool(interp, 0);
+		ret = JIM_OK;
+		goto close_fd;
+	}
 
 	if ((EAGAIN != errno) && (EACCES != errno)) {
 		Jim_SetResultFormatted(interp,
@@ -159,10 +163,7 @@ int Jim_LockfTestCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		goto close_fd;
 	}
 
-	locked = 1;
-
-set_result:
-	Jim_SetResultBool(interp, locked);
+	Jim_SetResultBool(interp, 1);
 	ret = JIM_OK;
 
 close_fd:
