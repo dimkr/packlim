@@ -22,6 +22,18 @@
 
 package require packlim
 
+proc get_key {} {
+	set path /etc/packlim/pub_key
+
+	if {![file exists $path]} {
+		packlim::log error "failed to read the public key"
+		exit 1
+	}
+
+	packlim::with_file fp $path r {set key [$fp read -nonewline]}
+	return $key
+}
+
 proc main {} {
 	if {2 > $::argc} {
 		usage "update|available|installed|install|remove|lock|source|purge \[ARG\]..."
@@ -47,8 +59,9 @@ proc main {} {
 			usage available
 		}
 
+		set key [get_key]
 		set installed [packlim::installed]
-		set available [lindex [packlim::available [curl] [get_repo $env]] 0]
+		set available [lindex [packlim::available [curl] [get_repo $env] $key] 0]
 		foreach name [dict keys $available] {
 			if {[dict exists $installed $name]} {
 				continue
@@ -73,17 +86,10 @@ proc main {} {
 			usage "install NAME"
 		}
 
-		set path /etc/packlim/pub_key
-		if {![file exists $path]} {
-			packlim::log error "failed to read the public key"
-			exit 1
-		} else {
-			packlim::with_file fp $path r {set key [$fp read -nonewline]}
-		}
-
 		set repo [get_repo $env]
 		set curl [curl]
-		set available [packlim::available $curl $repo]
+		set key [get_key]
+		set available [packlim::available $curl $repo $key]
 
 		foreach package [lrange $::argv 2 end] {
 			packlim::install $curl $repo {*}$available $package user $key

@@ -39,6 +39,15 @@ proc ::packlim::log {level msg} {
 	puts "\[$now\]<[format %-5s $level]>: $wrapped"
 }
 
+proc ::packlim::verify {data signature key name} {
+	if {0 == [string bytelength $key]} {
+		packlim::log warn "skipping the verification of $name"
+	} else {
+		packlim::log info "verifying $name"
+		ed25519.verify $data $signature $key
+	}
+}
+
 proc ::packlim::install {curl repo packages entries name trigger key} {
 	# if the package is already installed, do nothing
 	if {[file exists "/var/packlim/installed/$name/entry"]} {
@@ -92,12 +101,7 @@ proc ::packlim::install {curl repo packages entries name trigger key} {
 		}
 
 		# verify the package digital signature, using the public key
-		if {0 == [string bytelength $key]} {
-			packlim::log warn "skipping the verification of $file_name"
-		} else {
-			packlim::log info "verifying $file_name"
-			ed25519.verify $tar $signature $key
-		}
+		packlim::verify $tar $signature $key $file_name
 
 		# list the package contents
 		packlim::log info "registering $name"
@@ -248,6 +252,13 @@ proc ::packlim::update {curl repo} {
 		file delete /var/packlim/available
 		throw error "failed to download the package list"
 	}
+
+	try {
+		$curl get "$repo/available.sig" /var/packlim/available.sig
+	} on error {msg opts} {
+		file delete /var/packlim/available /var/packlim/available.sig
+		throw error "failed to download the package list digital signature"
+	}
 }
 
 proc ::packlim::parse {entry} {
@@ -275,7 +286,7 @@ proc ::packlim::with_file {fp path access script} {
 	}
 }
 
-proc ::packlim::available {curl repo} {
+proc ::packlim::available {curl repo key} {
 	set list /var/packlim/available
 
 	# if the package list is missing, fetch it
@@ -284,12 +295,16 @@ proc ::packlim::available {curl repo} {
 	}
 
 	# parse the package list
-	packlim::with_file fp $list r {set entries [string trimright [$fp read]]}
+	packlim::with_file fp $list r {set data [$fp read]}
+	packlim::with_file fp /var/packlim/available.sig r {
+		set signature [$fp read]
+	}
+	packlim::verify $data $signature $key "the package list"
 
 	set packages [dict create]
 	set raw [dict create]
 
-	foreach entry [lmap i [split $entries \n] {string trimright $i}] {
+	foreach entry [lmap i [split [string trimright $data] \n] {string trimright $i}] {
 		set package [packlim::parse $entry]
 		set name $package(name)
 		dict set packages $name $package
@@ -301,7 +316,7 @@ proc ::packlim::available {curl repo} {
 
 proc ::packlim::purge {} {
 	packlim::log info "purging unwanted files"
-	file delete /var/packlim/available
+	file delete /var/packlim/available.sig /var/packlim/available
 	file delete -force /var/packlim/downloaded
 }
 
