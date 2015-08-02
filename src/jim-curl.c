@@ -24,6 +24,9 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <ifaddrs.h>
+#include <string.h>
 
 #include <jim.h>
 #include <curl/curl.h>
@@ -113,6 +116,34 @@ static void JimCurlDelProc(Jim_Interp *interp, void *privData)
 	curl_easy_cleanup((CURL *) privData);
 }
 
+static int iface_up(void)
+{
+	struct ifaddrs *ifap, *ifa;
+	int ret = JIM_ERR;
+
+	if (-1 == getifaddrs(&ifap))
+		goto end;
+
+	for (ifa = ifap; NULL != ifa; ifa = ifa->ifa_next) {
+		if (NULL == ifa->ifa_addr)
+			continue;
+
+		if (0 == strcmp("lo", ifa->ifa_name))
+			continue;
+
+		if ((AF_INET == ifa->ifa_addr->sa_family) ||
+		    (AF_INET6 == ifa->ifa_addr->sa_family)) {
+			ret = JIM_OK;
+			break;
+		}
+	}
+
+	freeifaddrs(ifap);
+
+end:
+	return ret;
+}
+
 int Jim_CurlCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	char buf[32];
@@ -124,6 +155,11 @@ int Jim_CurlCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	}
 
 	Jim_SetEmptyResult(interp);
+
+	if (JIM_OK != iface_up()) {
+		Jim_SetResultString(interp, "network is unreachable", -1);
+		goto end;
+	}
 
 	curl = curl_easy_init();
 	if (NULL == curl)
