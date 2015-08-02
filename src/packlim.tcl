@@ -277,9 +277,8 @@ proc ::packlim::parse {entry} {
 proc ::packlim::with_file {fp path access script} {
 	upvar 1 $fp my_fp
 
+	set my_fp [open $path $access]
 	try {
-		open $path $access
-	} on ok my_fp {
 		uplevel 1 $script
 	} finally {
 		$my_fp close
@@ -288,15 +287,16 @@ proc ::packlim::with_file {fp path access script} {
 
 proc ::packlim::available {curl repo key} {
 	set list /var/packlim/available
+	set sig /var/packlim/available.sig
 
 	# if the package list is missing, fetch it
-	if {![file exists $list]} {
+	if {![file exists $list] || ![file exists $sig]} {
 		packlim::update $curl $repo
 	}
 
 	# parse the package list
 	packlim::with_file fp $list r {set data [$fp read]}
-	packlim::with_file fp /var/packlim/available.sig r {
+	packlim::with_file fp $sig r {
 		set signature [$fp read]
 	}
 	packlim::verify $data $signature $key "the package list"
