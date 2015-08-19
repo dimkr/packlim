@@ -189,30 +189,29 @@ int Jim_TarListCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	Jim_Obj *files;
 	unsigned char *data;
-	int len;
+	int len, ret = JIM_ERR;
 
 	if (2 != argc) {
 		Jim_WrongNumArgs(interp, 1, argv, "data");
-		return JIM_ERR;
+		goto out;
 	}
 
 	Jim_SetEmptyResult(interp);
 
 	if (JIM_ERR == check_len(interp, argv[1], &data, &len))
-		return JIM_ERR;
+		goto out;
 
 	files = Jim_NewListObj(interp, NULL, 0);
+	Jim_IncrRefCount(files);
 
-	if (JIM_ERR == iter_files(data,
-	                          (size_t) len,
-	                          interp,
-	                          list_file,
-	                          files))
-		return JIM_ERR;
+	ret = iter_files(data, (size_t) len, interp, list_file, files);
+	if (JIM_OK == ret)
+		Jim_SetResult(interp, files);
 
-	Jim_SetResult(interp, files);
+	Jim_DecrRefCount(interp, files);
 
-	return JIM_OK;
+out:
+	return ret;
 }
 
 int Jim_TarExtractCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
@@ -230,12 +229,5 @@ int Jim_TarExtractCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	if (JIM_ERR == check_len(interp, argv[1], &data, &len))
 		return JIM_ERR;
 
-	if (JIM_ERR == iter_files(data,
-	                          (size_t) len,
-	                          interp,
-	                          extract_file,
-	                          NULL))
-		return JIM_ERR;
-
-	return JIM_OK;
+	return iter_files(data, (size_t) len, interp, extract_file, NULL);
 }
