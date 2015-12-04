@@ -83,7 +83,7 @@ proc main {} {
 		}
 	} install {
 		if {3 > $::argc} {
-			usage "install NAME"
+			usage "install NAME..."
 		}
 
 		set repo [get_repo $env]
@@ -96,12 +96,20 @@ proc main {} {
 		}
 	} remove {
 		if {3 > $::argc} {
-			usage "remove NAME"
+			usage "remove NAME..."
 		}
 
 		foreach package [lrange $::argv 2 end] {
 			packlim::remove $package [packlim::installed]
 		}
+	} autoremove {
+		if {2 < $::argc} {
+			foreach package [lrange $::argv 2 end] {
+				packlim::remove $package [packlim::installed]
+			}
+		}
+
+		packlim::cleanup
 	} lock {
 		if {3 != $::argc} {
 			usage "lock NAME"
@@ -121,7 +129,7 @@ proc main {} {
 
 		packlim::purge
 	} default {
-		usage "update|available|installed|install|remove|lock|source|purge \[ARG\]..."
+		usage "update|available|installed|install|remove|autoremove|lock|source|purge \[ARG\]..."
 	}
 }
 

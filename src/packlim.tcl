@@ -215,7 +215,6 @@ proc ::packlim::remove {name installed} {
 
 	packlim::log info "removing $name"
 	packlim::remove_force $name
-	packlim::cleanup
 }
 
 proc ::packlim::cleanup {} {
