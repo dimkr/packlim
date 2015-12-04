@@ -72,7 +72,6 @@ proc ::packlim::install {curl repo packages entries name trigger key} {
 				packlim::install $curl $repo $packages $entries $dependency dependency $key
 			} on error {msg opts} {
 				packlim::log error $msg
-				packlim::cleanup
 				throw error "cannot install $name"
 			}
 		}
@@ -130,7 +129,6 @@ proc ::packlim::install {curl repo packages entries name trigger key} {
 	} on error {msg opts} {
 		packlim::log error $msg
 		packlim::remove_force $name
-		packlim::cleanup
 		throw error "failed to install $name"
 	}
 }

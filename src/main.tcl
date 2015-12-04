@@ -91,8 +91,13 @@ proc main {} {
 		set key [get_key]
 		set available [packlim::available $curl $repo $key]
 
-		foreach package [lrange $::argv 2 end] {
-			packlim::install $curl $repo {*}$available $package user $key
+		try {
+			foreach package [lrange $::argv 2 end] {
+				packlim::install $curl $repo {*}$available $package user $key
+			}
+		} on error {msg opts} {
+			packlim::cleanup
+			throw error $msg
 		}
 	} remove {
 		if {3 > $::argc} {
