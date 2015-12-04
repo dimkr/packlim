@@ -117,8 +117,10 @@ static int iter_files(unsigned char *data,
 	                               ARCHIVE_EXTRACT_XATTR);
 	archive_write_disk_set_standard_lookup(out);
 
-	if (0 != archive_read_open_memory(in, data, len))
+	if (0 != archive_read_open_memory(in, data, len)) {
+		Jim_SetResultFormatted(interp, "failed to read an archive: %s", archive_error_string(in), -1);
 		goto close_out;
+	}
 
 	do {
 		switch (archive_read_next_header(in, &entry)) {
