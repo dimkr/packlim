@@ -13,9 +13,9 @@ manager for Linux (https://www.kernel.org/) distributions.
 
 packlim's performance-critical parts are written in C and the rest (mostly
 logic and I/O) in written in Tcl, using Jim (http://jim.tcl.tk/). Native code
-provides speed, while exceptions and garbage collection improve error handling
-and resource efficiency. Also, the use of a scripting language greatly reduces
-the amount of code.
+provides speed and parallelism, while exceptions and garbage collection improve
+error handling and resource efficiency. Also, the use of a scripting language
+greatly reduces the amount of code.
 
 packlim is the successor to packlad (https://github.com/dimkr/packlad), which
 tries to achieve the same goals using C code alone.
@@ -23,7 +23,8 @@ tries to achieve the same goals using C code alone.
 Features
 ========
 
-  - Package download and installation, with recursive dependencies resolution
+  - Fast, recursive dependencies resolution
+  - Parallel download of each dependency chain, before it gets installed
   - Package removal, with automatic cleanup of unneeded packages
   - Support for digitally-signed packages, with quick verification
   - Support for multiple compression algorithms
@@ -39,7 +40,7 @@ commands.
 
 For example:
   1) To list the packages available in a repository:
-    puts [packlim::available [curl] http://repository]
+    puts [packlim::available http://repository ""]
 
   2) To remove a package:
     packlim::remove ca-certificates [packlim::installed]
@@ -48,8 +49,10 @@ For example:
     tar.list /path/to/tar
 
   4) To download a file:
-    set session [curl]
-    $session get http://some/file /some/path
+    curl get http://some/file /some/path
+
+  5) To remove all unneeded dependency packages:
+    packlim::cleanup
 
 packlim uses all API internally as well; see its implementation for more usage
 examples.

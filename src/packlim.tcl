@@ -48,45 +48,31 @@ proc ::packlim::verify {data signature key name} {
 	}
 }
 
-proc ::packlim::install {curl repo packages entries name trigger key} {
-	# if the package is already installed, do nothing
-	if {[file exists "/var/packlim/installed/$name/entry"]} {
-		packlim::log warn "$name is already installed"
-		return
-	}
+proc ::packlim::build_queue {package available trigger} {
+	set entries {}
 
-	# locate the package in the package list
-	log debug "searching the package list for $name"
 	try {
-		set package $packages($name)
+		set entry $available($package)
 	} on error {msg opts} {
-		throw error "failed to locate $name in the package list"
+		throw error "failed to locate $package in the package list"
 	}
 
-	# install the package dependencies, recursively
-	set dependencies $package(dependencies)
-	if {0 < [llength $dependencies]} {
-		log debug "installing the dependencies of $name"
-		foreach dependency $dependencies {
-			try {
-				packlim::install $curl $repo $packages $entries $dependency dependency $key
-			} on error {msg opts} {
-				packlim::log error $msg
-				throw error "cannot install $name; a dependency is unmet"
-			}
-		}
+	foreach dependency $entry(dependencies) {
+		set entries [list {*}[packlim::build_queue $dependency $available dependency] {*}$entries]
 	}
 
-	# download it
-	set file_name $package(file_name)
-	set path "/var/packlim/downloaded/$file_name"
-	file mkdir /var/packlim/downloaded
-	packlim::log info "downloading $file_name"
-	$curl get "$repo/$file_name" $path
+	dict set entry trigger $trigger
+	lappend entries $entry
 
+	return $entries
+}
+
+proc ::packlim::install {entry path trigger key} {
+	set name $entry(name)
+	set file_name $entry(file_name)
 	try {
 		# read the package contents
-		log debug "reading $file_name"
+		packlim::log debug "reading $file_name"
 
 		packlim::with_file fp $path r {
 			set tar [$fp read [expr [file size $path] - 68]]
@@ -113,9 +99,9 @@ proc ::packlim::install {curl repo packages entries name trigger key} {
 			$fp puts [join $files \n]
 		}
 
-		# save the package entry
+		# save the raw package entry
 		packlim::with_file fp "/var/packlim/installed/$name/entry" w {
-			$fp puts $entries($name)
+			$fp puts $entry(raw)
 		}
 
 		# save the package installation trigger
@@ -130,6 +116,58 @@ proc ::packlim::install {curl repo packages entries name trigger key} {
 		packlim::log error $msg
 		packlim::remove_force $name
 		throw error "failed to install $name"
+	}
+}
+
+proc ::packlim::fetch {repo package available trigger key} {
+	packlim::log info "building the package installation queue"
+	set entries [packlim::build_queue $package $available $trigger]
+
+	set names {}
+	set installed {}
+
+	# create a unique, sorted list from the package entries in the queue
+	set unique_entries {}
+	foreach entry [lsort -unique $entries] {
+		set name $entry(name)
+		if {[file exists "/var/packlim/installed/$name/entry"]} {
+			packlim::log warn "$name is already installed"
+			lappend installed $name
+			continue
+		}
+		lappend unique_entries $entry
+		lappend names $name
+	}
+
+	# if all packages are installed, stop here
+	set length [llength $names]
+	if {0 == $length} {
+		return
+	}
+
+	# download all packages
+	file mkdir /var/packlim/downloaded
+	if {1 < $length} {
+		packlim::log info "downloading [join [lrange $names 0 end-1] {, }] and [lindex $names end]"
+	} else {
+		packlim::log info "downloading $names"
+	}
+
+	curl get {*}[join [lmap entry $unique_entries {list $entry(url) $entry(path)}]]
+
+	foreach entry $entries {
+		set name $entry(name)
+
+		# if the package is already installed, do nothing
+		if {-1 != [lsearch $installed $name]} {
+			continue
+		}
+
+		# install the package
+		packlim::install $entry $entry(path) $entry(trigger) $key
+
+		# append it to the list of installed packages
+		lappend installed $name
 	}
 }
 
@@ -216,7 +254,7 @@ proc ::packlim::remove {name installed} {
 }
 
 proc ::packlim::cleanup {} {
-	log debug "removing unneeded packages"
+	packlim::log debug "removing unneeded packages"
 
 	while {1} {
 		set count 0
@@ -241,17 +279,17 @@ proc ::packlim::cleanup {} {
 	}
 }
 
-proc ::packlim::update {curl repo} {
+proc ::packlim::update {repo} {
 	packlim::log info "updating the package list"
 	try {
-		$curl get "$repo/available" /var/packlim/available
+		curl get "$repo/available" /var/packlim/available
 	} on error {msg opts} {
 		file delete /var/packlim/available
 		throw error "failed to download the package list"
 	}
 
 	try {
-		$curl get "$repo/available.sig" /var/packlim/available.sig
+		curl get "$repo/available.sig" /var/packlim/available.sig
 	} on error {msg opts} {
 		file delete /var/packlim/available /var/packlim/available.sig
 		throw error "failed to download the package list digital signature"
@@ -282,13 +320,13 @@ proc ::packlim::with_file {fp path access script} {
 	}
 }
 
-proc ::packlim::available {curl repo key} {
+proc ::packlim::available {repo key} {
 	set list /var/packlim/available
 	set sig /var/packlim/available.sig
 
 	# if the package list is missing, fetch it
 	if {![file exists $list] || ![file exists $sig]} {
-		packlim::update $curl $repo
+		packlim::update $repo
 	}
 
 	# parse the package list
@@ -303,12 +341,14 @@ proc ::packlim::available {curl repo key} {
 
 	foreach entry [lmap i [split [string trimright $data] \n] {string trimright $i}] {
 		set package [packlim::parse $entry]
-		set name $package(name)
-		dict set packages $name $package
-		dict set raw $name $entry
+		dict set package raw $entry
+		set file_name $package(file_name)
+		dict set package url "$repo/$file_name"
+		dict set package path "/var/packlim/downloaded/$file_name"
+		dict set packages $package(name) $package
 	}
 
-	list $packages $raw
+	return $packages
 }
 
 proc ::packlim::purge {} {

@@ -27,96 +27,17 @@
 #include <sys/types.h>
 #include <ifaddrs.h>
 #include <string.h>
+#include <errno.h>
 
 #include <jim.h>
+#include <jim-subcmd.h>
 #include <curl/curl.h>
 
 #define USER_AGENT "packlim/"VERSION
+#define CONNECT_TIMEOUT 30
+#define TIMEOUT 180
 
-static int get_file(Jim_Interp *interp,
-                    CURL *curl,
-                    const char *url,
-                    const char *path)
-{
-	FILE *fh;
-	CURLcode code;
-
-	fh = fopen(path, "w");
-	if (NULL == fh) {
-		Jim_SetResultFormatted(interp, "failed to open %s", path);
-		return JIM_ERR;
-	}
-
-	if (CURLE_OK != curl_easy_setopt(curl, CURLOPT_URL, url))
-		goto delete_file;
-
-	if (CURLE_OK != curl_easy_setopt(curl, CURLOPT_WRITEDATA, fh))
-		goto delete_file;
-
-	code = curl_easy_perform(curl);
-	(void) fclose(fh);
-
-	if (CURLE_OK == code)
-		return JIM_OK;
-
-	Jim_SetResultFormatted(interp, "failed to download %s", url);
-
-delete_file:
-	(void) unlink(path);
-
-	return JIM_ERR;
-}
-
-static int JimCurlHandlerCommand(Jim_Interp *interp,
-                                 int argc,
-                                 Jim_Obj *const *argv)
-{
-	static const char *const options[] = { "get", NULL };
-	const char *url;
-	const char *path;
-	CURL *curl = (CURL *) Jim_CmdPrivData(interp);
-	int option;
-	int len;
-	enum { OPT_GET };
-
-	if (4 != argc) {
-		Jim_WrongNumArgs(interp, 1, argv, "method ?args ...?");
-		return JIM_ERR;
-	}
-
-	Jim_SetEmptyResult(interp);
-
-	if (JIM_OK != Jim_GetEnum(interp,
-	                          argv[1],
-	                          options,
-	                          &option,
-	                          "curl method",
-	                          JIM_ERRMSG))
-		return JIM_ERR;
-
-	url = Jim_GetString(argv[2], &len);
-	if (0 == len) {
-		Jim_SetResultString(interp, "the URL cannot be an empty string", -1);
-		return JIM_ERR;
-	}
-
-	path = Jim_GetString(argv[3], &len);
-	if (0 == len) {
-		Jim_SetResultString(interp,
-		                    "the destination path cannot be an empty string",
-		                    -1);
-		return JIM_ERR;
-	}
-
-	return get_file(interp, curl, url, path);
-}
-
-static void JimCurlDelProc(Jim_Interp *interp, void *privData)
-{
-	curl_easy_cleanup((CURL *) privData);
-}
-
-static int iface_up(void)
+static int JimCurlNetworkReachable(void)
 {
 	struct ifaddrs *ifap, *ifa;
 	int ret = JIM_ERR;
@@ -144,59 +65,169 @@ end:
 	return ret;
 }
 
+static int curl_cmd_get(Jim_Interp *interp,
+                        int argc,
+                        Jim_Obj *const *argv)
+{
+	CURLM *cm;
+	CURL **cs;
+	FILE **fhs;
+	const char **urls, **paths;
+	int n, i, len, j, act, nfds, ret = JIM_OK;
+	CURLMcode m;
+
+	if (argc % 2 == 1) {
+		Jim_WrongNumArgs(interp, 0, argv, "progress url path ...");
+		return JIM_ERR;
+	}
+
+	if (JIM_OK != JimCurlNetworkReachable()) {
+		Jim_SetResultString(interp, "network is unreachable", -1);
+		return JIM_ERR;
+	}
+
+	n = argc / 2;
+	cs = Jim_Alloc(n * sizeof(CURL *));
+	fhs = Jim_Alloc(n * sizeof(FILE *));
+	urls = Jim_Alloc(n * sizeof(char *));
+	paths = Jim_Alloc(n * sizeof(char *));
+
+	cm = curl_multi_init();
+	if (NULL == cm) {
+		goto free_arrs;
+	}
+
+	for (i = 0; argc > i; i += 2) {
+		j = i / 2;
+
+		urls[j] = Jim_GetString(argv[i], &len);
+		if (0 == len) {
+			Jim_SetResultString(interp, "a URL cannot be an empty string", -1);
+			goto cleanup_cm;
+		}
+
+		paths[j] = Jim_GetString(argv[1 + i], &len);
+		if (0 == len) {
+			Jim_SetResultString(interp,
+			                    "a destination path cannot be an empty string",
+			                    -1);
+			goto cleanup_cm;
+		}
+	}
+
+	for (i = 0; n > i; ++i) {
+		fhs[i] = fopen(paths[i], "w");
+		if (NULL == fhs[i]) {
+			for (--i; 0 <= i; --i) {
+				(void) fclose(fhs[i]);
+				(void) unlink(paths[i]);
+			}
+
+			Jim_SetResultFormatted(interp, "failed to open %s: %s", paths[i], strerror(errno));
+			goto cleanup_cm;
+		}
+	}
+
+	for (i = 0; n > i; ++i) {
+		cs[i] = curl_easy_init();
+		if (NULL == cs[i]) {
+			for (--i; 0 <= i; --i) {
+				curl_easy_cleanup(cs[i]);
+			}
+
+			goto close_fhs;
+		}
+	}
+
+	for (i = 0; n > i; ++i) {
+		if ((CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_FAILONERROR, 1)) ||
+		    (CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_TCP_NODELAY, 1)) ||
+		    (CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_USE_SSL, CURLUSESSL_TRY)) ||
+		    (CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_WRITEFUNCTION, fwrite)) ||
+		    (CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_WRITEDATA, fhs[i])) ||
+		    (CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_USERAGENT, USER_AGENT)) ||
+		    (CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_URL, urls[i])) ||
+		    (CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_CONNECTTIMEOUT, CONNECT_TIMEOUT)) ||
+		    (CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_TIMEOUT, TIMEOUT))) {
+			goto cleanup_cs;
+		}
+	}
+
+	for (i = 0; n > i; ++i) {
+		if (CURLM_OK != curl_multi_add_handle(cm, cs[i])) {
+			for (--i; 0 <= i; --i) {
+				(void) curl_multi_remove_handle(cm, cs[j]);
+			}
+
+			goto cleanup_cs;
+		}
+	}
+
+	do {
+		m = curl_multi_perform(cm, &act);
+		if (CURLM_OK != m) {
+			Jim_SetResultString(interp, curl_multi_strerror(m), -1);
+			break;
+		}
+		if (0 == act) {
+			ret = JIM_OK;
+			break;
+		}
+
+		m = curl_multi_wait(cm, NULL, 0, 1000, &nfds);
+		if (CURLM_OK != m) {
+			Jim_SetResultString(interp, curl_multi_strerror(m), -1);
+			break;
+		}
+		if (0 == nfds) {
+			(void) usleep(100000);
+		}
+	} while (1);
+
+	for (i = 0; n > i; ++i) {
+		(void) curl_multi_remove_handle(cm, cs[i]);
+	}
+
+cleanup_cs:
+	for (i = 0; n > i; ++i) {
+		curl_easy_cleanup(cs[i]);
+	}
+
+close_fhs:
+	for (i = 0; n > i; ++i) {
+		(void) fclose(fhs[i]);
+	}
+
+	if (JIM_OK != ret) {
+		for (i = 0; n > i; ++i) {
+			(void) unlink(paths[i]);
+		}
+	}
+
+cleanup_cm:
+	curl_multi_cleanup(cm);
+
+free_arrs:
+	Jim_Free(paths);
+	Jim_Free(urls);
+	Jim_Free(fhs);
+	Jim_Free(cs);
+
+	return ret;
+}
+
+static const jim_subcmd_type curl_command_table[] = {
+	{
+		"get",
+		"url path ...",
+		curl_cmd_get,
+		2,
+		-1
+	},
+	{ NULL }
+};
+
 int Jim_CurlCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-	char buf[32];
-	CURL *curl;
-
-	if (1 != argc) {
-		Jim_WrongNumArgs(interp, 1, argv, "");
-		goto end;
-	}
-
-	Jim_SetEmptyResult(interp);
-
-	if (JIM_OK != iface_up()) {
-		Jim_SetResultString(interp, "network is unreachable", -1);
-		goto end;
-	}
-
-	curl = curl_easy_init();
-	if (NULL == curl)
-		goto end;
-
-	if (CURLE_OK != curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1))
-		goto curl_cleanup;
-
-	if (CURLE_OK != curl_easy_setopt(curl, CURLOPT_TCP_NODELAY, 1))
-		goto curl_cleanup;
-
-	if (CURLE_OK != curl_easy_setopt(curl, CURLOPT_USE_SSL, CURLUSESSL_TRY))
-		goto curl_cleanup;
-
-	if (CURLE_OK != curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fwrite))
-		goto curl_cleanup;
-
-	if (CURLE_OK != curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT))
-		goto curl_cleanup;
-
-	(void) sprintf(buf, "curl.handle%ld", Jim_GetId(interp));
-	Jim_CreateCommand(interp,
-	                  buf,
-	                  JimCurlHandlerCommand,
-	                  curl,
-	                  JimCurlDelProc);
-	Jim_SetResult(interp,
-	              Jim_MakeGlobalNamespaceName(interp,
-	                                          Jim_NewStringObj(interp,
-	                                                           buf,
-	                                                           -1)));
-
-	return JIM_OK;
-
-curl_cleanup:
-	curl_easy_cleanup(curl);
-
-end:
-	return JIM_ERR;
+    return Jim_CallSubCmd(interp, Jim_ParseSubCmd(interp, curl_command_table, argc, argv), argc, argv);
 }

@@ -53,7 +53,7 @@ proc main {} {
 			usage update
 		}
 
-		packlim::update [curl] [get_repo $env]
+		packlim::update [get_repo $env]
 	} available {
 		if {2 != $::argc} {
 			usage available
@@ -61,7 +61,7 @@ proc main {} {
 
 		set key [get_key]
 		set installed [packlim::installed]
-		set available [lindex [packlim::available [curl] [get_repo $env] $key] 0]
+		set available [packlim::available [get_repo $env] $key]
 		foreach name [dict keys $available] {
 			if {[dict exists $installed $name]} {
 				continue
@@ -87,13 +87,12 @@ proc main {} {
 		}
 
 		set repo [get_repo $env]
-		set curl [curl]
 		set key [get_key]
-		set available [packlim::available $curl $repo $key]
+		set available [packlim::available $repo $key]
 
 		try {
 			foreach package [lrange $::argv 2 end] {
-				packlim::install $curl $repo {*}$available $package user $key
+				packlim::fetch $repo $package $available user $key
 			}
 		} on error {msg opts} {
 			packlim::cleanup
