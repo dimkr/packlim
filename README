@@ -22,14 +22,45 @@ tries to achieve the same goals using C code alone.
 
 Features
 ========
+                                             Recursive dependencies resolution
+  # packlim install snownews                            ||
+  [22/12 19:04:00]<info >: verifying the package list   \/
+  [22/12 19:04:00]<info >: building the package installation queue
+  [22/12 19:04:00]<warn >: iana-etc is already installed (!)
+  [22/12 19:04:00]<warn >: linux-libre-headers is already installed (!)
+  [22/12 19:04:00]<warn >: musl is already installed (!)
+  [22/12 19:04:00]<warn >: zlib is already installed (!)
+  [22/12 19:04:00]<info >: downloading fuse, libseccomp, libwaive and luufs
+  [22/12 19:04:00]<debug>: (reading libseccomp-2.2.3.pkg)     /\
+  [22/12 19:04:00]<info >: verifying libseccomp-2.2.3.pkg     ||
+  [22/12 19:04:00]<info >: registering libseccomp             ||
+  [22/12 19:04:00]<info >: extracting libseccomp-2.2.3.pkg    ||
+  [22/12 19:04:00]<debug>: (reading libwaive-22122015.pkg)    ||
+  [22/12 19:04:00]<info >: verifying libwaive-22122015.pkg    Parallel download
+  [22/12 19:04:00]<info >: registering libwaive               of all packages
+  [22/12 19:04:00]<info >: extracting libwaive-22122015.pkg   in a dependency
+  [22/12 19:04:00]<debug>: (reading fuse-2.9.4.pkg)           chain, before it
+  [22/12 19:04:00]<info >: verifying fuse-2.9.4.pkg           gets installed
+  [22/12 19:04:00]<info >: registering fuse
+  [22/12 19:04:00]<info >: extracting fuse-2.9.4.pkg
+  [22/12 19:04:00]<debug>: (reading luufs-22122015.pkg)
+  [22/12 19:04:00]<info >: verifying luufs-22122015.pkg<=====Digitally-signed
+  [22/12 19:04:00]<info >: registering luufs                 packages
+  [22/12 19:04:01]<info >: extracting luufs-22122015.pkg
+                                  /\
+                                  ||
+                Support for multiple compression algorithms
 
-  - Fast, recursive dependencies resolution
-  - Parallel download of each dependency chain, before it gets installed
-  - Package removal, with automatic cleanup of unneeded packages
-  - Support for digitally-signed packages, with quick verification
-  - Support for multiple compression algorithms
-  - Support for installing packages to a prefix other than /
-  - A scripting interface
+  # packlim autoremove luufs
+  [22/12 19:04:07]<info >: removing luufs
+  [22/12 19:04:07]<debug>: (removing unneeded packages)<=====Automatic removal
+  [22/12 19:04:07]<info >: removing fuse                     of unneeded
+  [22/12 19:04:07]<info >: removing libwaive                 packages
+  [22/12 19:04:07]<info >: removing libseccomp
+
+In addition, packlim:
+  - Supports installation of packages to a prefix other than /
+  - Has a scripting interface
 
 Scripting Interface
 ===================
