@@ -28,7 +28,7 @@ Features
   - Package removal, with automatic cleanup of unneeded packages
   - Support for digitally-signed packages, with quick verification
   - Support for multiple compression algorithms
-  - Support for installing packages to a prefix other than /, via chroot()
+  - Support for installing packages to a prefix other than /
   - A scripting interface
 
 Scripting Interface

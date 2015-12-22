@@ -92,20 +92,20 @@ proc ::packlim::install {entry path trigger key} {
 		packlim::log info "registering $name"
 		set files [tar.list $tar]
 
-		file mkdir "/var/packlim/installed/$name"
+		file mkdir "./var/packlim/installed/$name"
 
 		# save the file list
-		packlim::with_file fp "/var/packlim/installed/$name/files" w {
+		packlim::with_file fp "./var/packlim/installed/$name/files" w {
 			$fp puts [join $files \n]
 		}
 
 		# save the raw package entry
-		packlim::with_file fp "/var/packlim/installed/$name/entry" w {
+		packlim::with_file fp "./var/packlim/installed/$name/entry" w {
 			$fp puts $entry(raw)
 		}
 
 		# save the package installation trigger
-		packlim::with_file fp "/var/packlim/installed/$name/trigger" w {
+		packlim::with_file fp "./var/packlim/installed/$name/trigger" w {
 			$fp puts $trigger
 		}
 
@@ -130,7 +130,7 @@ proc ::packlim::fetch {repo package available trigger key} {
 	set unique_entries {}
 	foreach entry [lsort -unique $entries] {
 		set name $entry(name)
-		if {[file exists "/var/packlim/installed/$name/entry"]} {
+		if {[file exists "./var/packlim/installed/$name/entry"]} {
 			packlim::log warn "$name is already installed"
 			lappend installed $name
 			continue
@@ -146,7 +146,7 @@ proc ::packlim::fetch {repo package available trigger key} {
 	}
 
 	# download all packages
-	file mkdir /var/packlim/downloaded
+	file mkdir ./var/packlim/downloaded
 	if {1 < $length} {
 		packlim::log info "downloading [join [lrange $names 0 end-1] {, }] and [lindex $names end]"
 	} else {
@@ -174,7 +174,7 @@ proc ::packlim::fetch {repo package available trigger key} {
 proc ::packlim::installed {} {
 	set installed [dict create]
 
-	foreach path [glob -nocomplain -directory "/var/packlim/installed" *] {
+	foreach path [glob -nocomplain -directory "./var/packlim/installed" *] {
 		packlim::with_file fp "$path/trigger" r {set trigger [$fp read -nonewline]}
 		packlim::with_file fp "$path/entry" r {set entry [$fp read -nonewline]}
 		set package [packlim::parse $entry]
@@ -187,7 +187,7 @@ proc ::packlim::installed {} {
 
 # removes a package without any safety checks
 proc ::packlim::remove_force {name} {
-	set path "/var/packlim/installed/$name/files"
+	set path "./var/packlim/installed/$name/files"
 	if {[file exists $path]} {
 		# read the list of files installed by the package
 		packlim::with_file fp $path r {
@@ -207,17 +207,17 @@ proc ::packlim::remove_force {name} {
 	}
 
 	# read the package entry, to obtain its file name
-	set path "/var/packlim/installed/$name/entry"
+	set path "./var/packlim/installed/$name/entry"
 	if {[file exists $path]} {
 		packlim::with_file fp $path r {set entry [$fp read -nonewline]}
 		set package [packlim::parse $entry]
 
 		# delete the downloaded package
-		file delete "/var/packlim/downloaded/$package(file_name)"
+		file delete "./var/packlim/downloaded/$package(file_name)"
 	}
 
 	# remove the package installation data
-	file delete -force "/var/packlim/installed/$name"
+	file delete -force "./var/packlim/installed/$name"
 }
 
 proc ::packlim::needed {name installed} {
@@ -233,7 +233,7 @@ proc ::packlim::needed {name installed} {
 
 # safely removes a package
 proc ::packlim::remove {name installed} {
-	if {![file exists "/var/packlim/installed/$name/trigger"]} {
+	if {![file exists "./var/packlim/installed/$name/trigger"]} {
 		packlim::log warn "$name is not installed"
 		return
 	}
@@ -282,16 +282,16 @@ proc ::packlim::cleanup {} {
 proc ::packlim::update {repo} {
 	packlim::log info "updating the package list"
 	try {
-		curl get "$repo/available" /var/packlim/available
+		curl get "$repo/available" ./var/packlim/available
 	} on error {msg opts} {
-		file delete /var/packlim/available
+		file delete ./var/packlim/available
 		throw error "failed to download the package list"
 	}
 
 	try {
-		curl get "$repo/available.sig" /var/packlim/available.sig
+		curl get "$repo/available.sig" ./var/packlim/available.sig
 	} on error {msg opts} {
-		file delete /var/packlim/available /var/packlim/available.sig
+		file delete ./var/packlim/available ./var/packlim/available.sig
 		throw error "failed to download the package list digital signature"
 	}
 }
@@ -321,8 +321,8 @@ proc ::packlim::with_file {fp path access script} {
 }
 
 proc ::packlim::available {repo key} {
-	set list /var/packlim/available
-	set sig /var/packlim/available.sig
+	set list ./var/packlim/available
+	set sig ./var/packlim/available.sig
 
 	# if the package list is missing, fetch it
 	if {![file exists $list] || ![file exists $sig]} {
@@ -344,7 +344,7 @@ proc ::packlim::available {repo key} {
 		dict set package raw $entry
 		set file_name $package(file_name)
 		dict set package url "$repo/$file_name"
-		dict set package path "/var/packlim/downloaded/$file_name"
+		dict set package path "./var/packlim/downloaded/$file_name"
 		dict set packages $package(name) $package
 	}
 
@@ -353,13 +353,13 @@ proc ::packlim::available {repo key} {
 
 proc ::packlim::purge {} {
 	packlim::log info "purging unwanted files"
-	file delete /var/packlim/available.sig /var/packlim/available
-	file delete -force /var/packlim/downloaded
+	file delete ./var/packlim/available.sig ./var/packlim/available
+	file delete -force ./var/packlim/downloaded
 }
 
 proc ::packlim::lock {name} {
 	packlim::log info "locking $name"
-	packlim::with_file fp "/var/packlim/installed/$name/trigger" w {$fp puts locked}
+	packlim::with_file fp "./var/packlim/installed/$name/trigger" w {$fp puts locked}
 }
 
 proc usage {err} {

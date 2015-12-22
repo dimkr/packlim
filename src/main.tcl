@@ -23,7 +23,7 @@
 package require packlim
 
 proc get_key {} {
-	set path /etc/packlim/pub_key
+	set path ./etc/packlim/pub_key
 
 	if {![file exists $path]} {
 		packlim::log error "failed to read the public key"
@@ -40,13 +40,13 @@ proc main {} {
 	}
 
 	set env [env]
-	file mkdir /var/packlim /var/packlim/installed
+	file mkdir ./var/packlim ./var/packlim/installed
 
 	# wait for other instances to terminate
-	if {[lockf.locked /var/packlim/lock]} {
+	if {[lockf.locked ./var/packlim/lock]} {
 		packlim::log warn "another instance is running; waiting"
 	}
-	set lock [lockf.lock /var/packlim/lock]
+	set lock [lockf.lock ./var/packlim/lock]
 
 	switch -exact [lindex $::argv 1] update {
 		if {2 != $::argc} {

@@ -60,12 +60,9 @@ int main(int argc, char *argv[])
 	}
 
 	prefix = getenv("PREFIX");
-	if (NULL != prefix) {
-		if (-1 == chroot(prefix))
-			goto end;
-	}
-
-	if (-1 == chdir("/"))
+	if (NULL == prefix)
+		prefix = "/";
+	if (-1 == chdir(prefix))
 		goto end;
 
 	if (0 != curl_global_init(CURL_GLOBAL_NOTHING))
