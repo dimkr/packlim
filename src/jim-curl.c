@@ -120,8 +120,8 @@ static int curl_cmd_get(Jim_Interp *interp,
 		fhs[i] = fopen(paths[i], "w");
 		if (NULL == fhs[i]) {
 			for (--i; 0 <= i; --i) {
-				(void) fclose(fhs[i]);
-				(void) unlink(paths[i]);
+				fclose(fhs[i]);
+				unlink(paths[i]);
 			}
 
 			Jim_SetResultFormatted(interp, "failed to open %s: %s", paths[i], strerror(errno));
@@ -157,7 +157,7 @@ static int curl_cmd_get(Jim_Interp *interp,
 	for (i = 0; n > i; ++i) {
 		if (CURLM_OK != curl_multi_add_handle(cm, cs[i])) {
 			for (--i; 0 <= i; --i) {
-				(void) curl_multi_remove_handle(cm, cs[j]);
+				curl_multi_remove_handle(cm, cs[j]);
 			}
 
 			goto cleanup_cs;
@@ -189,12 +189,12 @@ static int curl_cmd_get(Jim_Interp *interp,
 			break;
 		}
 		if (0 == nfds) {
-			(void) usleep(100000);
+			usleep(100000);
 		}
 	} while (1);
 
 	for (i = 0; n > i; ++i) {
-		(void) curl_multi_remove_handle(cm, cs[i]);
+		curl_multi_remove_handle(cm, cs[i]);
 	}
 
 cleanup_cs:
@@ -204,12 +204,12 @@ cleanup_cs:
 
 close_fhs:
 	for (i = 0; n > i; ++i) {
-		(void) fclose(fhs[i]);
+		fclose(fhs[i]);
 	}
 
 	if (JIM_OK != ret) {
 		for (i = 0; n > i; ++i) {
-			(void) unlink(paths[i]);
+			unlink(paths[i]);
 		}
 	}
 

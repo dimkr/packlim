@@ -33,24 +33,24 @@
 #include <archive.h>
 #include <archive_entry.h>
 
-static int list_file(struct archive *in,
-                     struct archive *out,
-                     Jim_Interp *interp,
-                     void *arg,
-                     const char *path)
+static int JimTarListFile(struct archive *in,
+                          struct archive *out,
+                          Jim_Interp *interp,
+                          void *arg,
+                          const char *path)
 {
 	Jim_ListAppendElement(interp,
-	                      (Jim_Obj *) arg,
+	                      (Jim_Obj *)arg,
 	                      Jim_NewStringObj(interp, path, -1));
 
 	return JIM_OK;
 }
 
-static int extract_file(struct archive *in,
-                        struct archive *out,
-                        Jim_Interp *interp,
-                        void *arg,
-                        const char *path)
+static int JimTarExtractFile(struct archive *in,
+                             struct archive *out,
+                             Jim_Interp *interp,
+                             void *arg,
+                             const char *path)
 {
 	__LA_INT64_T off;
 	size_t size;
@@ -62,45 +62,54 @@ static int extract_file(struct archive *in,
 				if (ARCHIVE_OK != archive_write_data_block(out,
 				                                           blk,
 				                                           size,
-				                                           off))
-					goto error;
+				                                           off)) {
+					goto err;
+				}
 				break;
 
 			case ARCHIVE_EOF:
 				return JIM_OK;
 
 			default:
-				goto error;
+				goto err;
 		}
 	} while (1);
 
-error:
+err:
 	Jim_SetResultFormatted(interp, "failed to extract %s", path);
 	return JIM_ERR;
 }
 
-static int iter_files(unsigned char *data,
-                      const size_t len,
-                      Jim_Interp *interp,
-                      int (*cb)(struct archive *,
-                                struct archive *,
-                                Jim_Interp *,
-                                void *,
-                                const char *),
-                      void *arg)
+static int JimTarIterFiles(Jim_Obj *data_obj,
+                           Jim_Interp *interp,
+                           int (*cb)(struct archive *,
+                                     struct archive *,
+                                     Jim_Interp *,
+                                     void *,
+                                     const char *),
+                           void *arg)
 {
 	struct archive *in, *out;
 	struct archive_entry *entry;
 	const char *path;
-	int ret = JIM_ERR;
+	unsigned char *data;
+	int len, ret = JIM_ERR;
+
+	data = (unsigned char *)Jim_GetString(data_obj, &len);
+	if (!len) {
+		Jim_SetResultString(interp, "the archive is an empty file", -1);
+		return JIM_ERR;
+	}
 
 	in = archive_read_new();
-	if (NULL == in)
-		goto end;
+	if (!in) {
+		return JIM_ERR;
+	}
 
 	out = archive_write_disk_new();
-	if (NULL == out)
+	if (!out) {
 		goto close_in;
+	}
 
 	archive_read_support_filter_lzip(in);
 	archive_read_support_filter_xz(in);
@@ -117,8 +126,11 @@ static int iter_files(unsigned char *data,
 	                               ARCHIVE_EXTRACT_XATTR);
 	archive_write_disk_set_standard_lookup(out);
 
-	if (0 != archive_read_open_memory(in, data, len)) {
-		Jim_SetResultFormatted(interp, "failed to read an archive: %s", archive_error_string(in), -1);
+	if (archive_read_open_memory(in, data, (size_t)len) != 0) {
+		Jim_SetResultFormatted(interp,
+		                       "failed to read an archive: %s",
+		                       archive_error_string(in),
+		                       -1);
 		goto close_out;
 	}
 
@@ -137,11 +149,12 @@ static int iter_files(unsigned char *data,
 		}
 
 		path = archive_entry_pathname(entry);
-		if (NULL == path)
+		if (!path) {
 			break;
+		}
 
 		/* make sure all paths begin with "./" */
-		if (0 != strncmp("./", path, 2)) {
+		if (strncmp("./", path, 2) != 0) {
 			Jim_SetResultFormatted(interp,
 			                       "read an invalid file path: %s",
 			                       path);
@@ -149,87 +162,59 @@ static int iter_files(unsigned char *data,
 		}
 
 		/* ignore the root directory */
-		if (0 == strcmp("./", path))
+		if (strcmp("./", path) == 0) {
 			continue;
+		}
 
-		if (ARCHIVE_OK != archive_write_header(out, entry)) {
+		if (archive_write_header(out, entry) != ARCHIVE_OK) {
 			Jim_SetResultString(interp, "failed to write a file header", -1);
 			break;
 		}
 
-		if (JIM_OK != cb(in, out, interp, arg, &path[1]))
+		if (JIM_OK != cb(in, out, interp, arg, &path[1])) {
 			break;
+		}
 	} while (1);
 
 close_out:
-	(void) archive_write_close(out);
+	archive_write_close(out);
 	archive_write_free(out);
 
 close_in:
 	archive_read_free(in);
 
-end:
 	return ret;
-}
-
-static int check_len(Jim_Interp *interp,
-                     Jim_Obj *obj,
-                     unsigned char **data,
-                     int *len)
-{
-	*data = (unsigned char *) Jim_GetString(obj, len);
-
-	if (0 == len) {
-		Jim_SetResultString(interp, "the archive is an empty file", -1);
-		return JIM_ERR;
-	}
-
-	return JIM_OK;
 }
 
 int Jim_TarListCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	Jim_Obj *files;
-	unsigned char *data;
-	int len, ret = JIM_ERR;
+	int ret;
 
-	if (2 != argc) {
-		Jim_WrongNumArgs(interp, 1, argv, "data");
-		goto out;
+	if (argc != 2) {
+		Jim_WrongNumArgs(interp, 0, argv, "data");
+		return JIM_ERR;
 	}
-
-	Jim_SetEmptyResult(interp);
-
-	if (JIM_ERR == check_len(interp, argv[1], &data, &len))
-		goto out;
 
 	files = Jim_NewListObj(interp, NULL, 0);
 	Jim_IncrRefCount(files);
 
-	ret = iter_files(data, (size_t) len, interp, list_file, files);
-	if (JIM_OK == ret)
+	ret = JimTarIterFiles(argv[1], interp, JimTarListFile, files);
+	if (ret == JIM_OK) {
 		Jim_SetResult(interp, files);
+	}
 
 	Jim_DecrRefCount(interp, files);
 
-out:
 	return ret;
 }
 
 int Jim_TarExtractCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-	unsigned char *data;
-	int len;
-
-	if (2 != argc) {
-		Jim_WrongNumArgs(interp, 1, argv, "data");
+	if (argc != 2) {
+		Jim_WrongNumArgs(interp, 0, argv, "data");
 		return JIM_ERR;
 	}
 
-	Jim_SetEmptyResult(interp);
-
-	if (JIM_ERR == check_len(interp, argv[1], &data, &len))
-		return JIM_ERR;
-
-	return iter_files(data, (size_t) len, interp, extract_file, NULL);
+	return JimTarIterFiles(argv[1], interp, JimTarExtractFile, NULL);
 }

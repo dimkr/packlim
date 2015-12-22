@@ -35,7 +35,7 @@ proc get_key {} {
 }
 
 proc main {} {
-	if {2 > $::argc} {
+	if {$::argc < 2} {
 		usage "update|available|installed|install|remove|lock|source|purge \[ARG\]..."
 	}
 
@@ -49,13 +49,13 @@ proc main {} {
 	set lock [lockf.lock ./var/packlim/lock]
 
 	switch -exact [lindex $::argv 1] update {
-		if {2 != $::argc} {
+		if {$::argc != 2} {
 			usage update
 		}
 
 		packlim::update [get_repo $env]
 	} available {
-		if {2 != $::argc} {
+		if {$::argc != 2} {
 			usage available
 		}
 
@@ -70,7 +70,7 @@ proc main {} {
 			puts "$package(name)|$package(version)|$package(description)"
 		}
 	} installed {
-		if {2 != $::argc} {
+		if {$::argc != 2} {
 			usage installed
 		}
 
@@ -82,7 +82,7 @@ proc main {} {
 			}
 		}
 	} install {
-		if {3 > $::argc} {
+		if {$::argc < 3} {
 			usage "install NAME..."
 		}
 
@@ -99,7 +99,7 @@ proc main {} {
 			throw error $msg
 		}
 	} remove {
-		if {3 > $::argc} {
+		if {$::argc < 3} {
 			usage "remove NAME..."
 		}
 
@@ -107,7 +107,7 @@ proc main {} {
 			packlim::remove $package [packlim::installed]
 		}
 	} autoremove {
-		if {2 < $::argc} {
+		if {$::argc > 2} {
 			foreach package [lrange $::argv 2 end] {
 				packlim::remove $package [packlim::installed]
 			}
@@ -115,19 +115,19 @@ proc main {} {
 
 		packlim::cleanup
 	} lock {
-		if {3 != $::argc} {
+		if {$::argc != 3} {
 			usage "lock NAME"
 		}
 
 		packlim::lock [lindex $::argv 2]
 	} source {
-		if {3 != $::argc} {
+		if {$::argc != 3} {
 			usage "source SCRIPT"
 		}
 
 		source [lindex $::argv 2]
 	} purge {
-		if {2 != $::argc} {
+		if {$::argc != 2} {
 			usage "purge"
 		}
 
@@ -140,7 +140,7 @@ proc main {} {
 try {
 	main
 } on error {msg opts} {
-	if {0 < [string length $msg]} {
+	if {[string length $msg] > 0} {
 		packlim::log error $msg
 	} else {
 		packlim::log bug "caught an unknown, unhandled exception"

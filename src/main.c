@@ -48,34 +48,42 @@ static const char main_tcl[] = {
 
 int main(int argc, char *argv[])
 {
-	const char *prefix;
+	const char *pfix;
 	Jim_Interp *jim;
 	Jim_Obj *argv_obj;
 	int i;
 	int ret = EXIT_FAILURE;
 
-	if (0 != geteuid()) {
-		(void) write(STDERR_FILENO, "Error: must run as root.\n", 25);
-		goto end;
+	if (geteuid() != 0) {
+		write(STDERR_FILENO, "Error: must run as root.\n", 25);
+		return EXIT_FAILURE;
 	}
 
-	prefix = getenv("PREFIX");
-	if (NULL == prefix)
-		prefix = "/";
-	if (-1 == chdir(prefix))
-		goto end;
+	pfix = getenv("PREFIX");
+	if (NULL == pfix) {
+		pfix = "/";
+	}
+	if (-1 == chdir(pfix)) {
+		return EXIT_FAILURE;
+	}
 
-	if (0 != curl_global_init(CURL_GLOBAL_NOTHING))
-		goto end;
+	if (0 != curl_global_init(CURL_GLOBAL_NOTHING)) {
+		return EXIT_FAILURE;
+	}
 
 	jim = Jim_CreateInterp();
-	if (NULL == jim)
-		goto curl_cleanup;
+	if (NULL == jim) {
+		curl_global_cleanup();
+		return EXIT_FAILURE;
+	}
 
 	Jim_RegisterCoreCommands(jim);
 
-	if (JIM_OK != Jim_packlimInit(jim))
-		goto free_jim;
+	if (JIM_OK != Jim_packlimInit(jim)) {
+		Jim_FreeInterp(jim);
+		curl_global_cleanup();
+		return EXIT_FAILURE;
+	}
 
 	Jim_InitStaticExtensions(jim);
 	Jim_CreateCommand(jim,
@@ -123,12 +131,8 @@ int main(int argc, char *argv[])
 	Jim_Eval(jim, main_tcl);
 	ret = Jim_GetExitCode(jim);
 
-free_jim:
 	Jim_FreeInterp(jim);
-
-curl_cleanup:
 	curl_global_cleanup();
 
-end:
 	return ret;
 }

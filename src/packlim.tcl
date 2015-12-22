@@ -40,7 +40,7 @@ proc ::packlim::log {level msg} {
 }
 
 proc ::packlim::verify {data signature key name} {
-	if {0 == [string bytelength $key]} {
+	if {[string bytelength $key] == 0} {
 		packlim::log warn "skipping the verification of $name"
 	} else {
 		packlim::log info "verifying $name"
@@ -81,7 +81,7 @@ proc ::packlim::install {entry path trigger key} {
 		}
 
 		# verify the magic number
-		if {"hjkl" ne $magic} {
+		if {$magic ne "hjkl"} {
 			throw error "$file_name is not a valid package"
 		}
 
@@ -141,13 +141,13 @@ proc ::packlim::fetch {repo package available trigger key} {
 
 	# if all packages are installed, stop here
 	set length [llength $names]
-	if {0 == $length} {
+	if {$length == 0} {
 		return
 	}
 
 	# download all packages
 	file mkdir ./var/packlim/downloaded
-	if {1 < $length} {
+	if {$length > 1} {
 		packlim::log info "downloading [join [lrange $names 0 end-1] {, }] and [lindex $names end]"
 	} else {
 		packlim::log info "downloading $names"
@@ -159,7 +159,7 @@ proc ::packlim::fetch {repo package available trigger key} {
 		set name $entry(name)
 
 		# if the package is already installed, do nothing
-		if {-1 != [lsearch $installed $name]} {
+		if {[lsearch $installed $name] != -1} {
 			continue
 		}
 
@@ -239,7 +239,7 @@ proc ::packlim::remove {name installed} {
 	}
 
 	set trigger [lindex $installed($name) 1]
-	if {"user" ne $trigger} {
+	if {$trigger ne "user"} {
 		packlim::log error "$name cannot be removed; it is a $trigger package"
 		return 1
 	}

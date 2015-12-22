@@ -73,7 +73,15 @@ Dependencies
     - gzip (https://www.gnu.org/software/gzip/)
   - libcurl (http://curl.haxx.se/)
   - Ed25519 (https://github.com/orlp/ed25519)
-  - Jim (http://jim.tcl.tk/)
+  - jimtcl (http://jim.tcl.tk/)
+
+Hacking
+=======
+
+packlim is implemented as jimtcl (http://jim.tcl.tk/) C extensions, Tcl logic
+and a C wrapper for everything.
+
+packlim follows jimtcl's coding style conventions.
 
 Credits and Legal Information
 =============================

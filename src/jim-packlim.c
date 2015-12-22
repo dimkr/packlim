@@ -30,8 +30,9 @@ static const char packlim_tcl[] = {
 
 int Jim_packlimInit(Jim_Interp *interp)
 {
-	if (JIM_OK != Jim_PackageProvide(interp, "packlim", VERSION, JIM_ERRMSG))
+	if (JIM_OK != Jim_PackageProvide(interp, "packlim", VERSION, JIM_ERRMSG)) {
 		return JIM_ERR;
+	}
 
 	return Jim_EvalSource(interp, "packlim.inc", 1, packlim_tcl);
 }
