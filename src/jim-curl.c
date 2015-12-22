@@ -73,7 +73,8 @@ static int curl_cmd_get(Jim_Interp *interp,
 	CURL **cs;
 	FILE **fhs;
 	const char **urls, **paths;
-	int n, i, len, j, act, nfds, ret = JIM_OK;
+	const struct CURLMsg *info;
+	int n, i, len, j, act, nfds, q, ret = JIM_ERR;
 	CURLMcode m;
 
 	if (argc % 2 == 1) {
@@ -170,7 +171,15 @@ static int curl_cmd_get(Jim_Interp *interp,
 			break;
 		}
 		if (0 == act) {
-			ret = JIM_OK;
+			info = curl_multi_info_read(cm, &q);
+			if ((NULL != info) && (CURLMSG_DONE == info->msg)) {
+				if (CURLE_OK == info->data.result) {
+					ret = JIM_OK;
+				}
+				else {
+					Jim_SetResultString(interp, curl_easy_strerror(info->data.result), -1);
+				}
+			}
 			break;
 		}
 
