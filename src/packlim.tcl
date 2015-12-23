@@ -124,6 +124,7 @@ proc ::packlim::fetch {repo package available trigger key} {
 	set entries [packlim::build_queue $package $available $trigger]
 
 	set names {}
+	set paths {}
 	set installed {}
 
 	# create a unique, sorted list from the package entries in the queue
@@ -135,8 +136,9 @@ proc ::packlim::fetch {repo package available trigger key} {
 			lappend installed $name
 			continue
 		}
-		lappend unique_entries $entry
+		lappend paths $entry(path)
 		lappend names $name
+		lappend unique_entries $entry
 	}
 
 	# if all packages are installed, stop here
@@ -155,19 +157,32 @@ proc ::packlim::fetch {repo package available trigger key} {
 
 	curl get {*}[join [lmap entry $unique_entries {list $entry(url) $entry(path)}]]
 
-	foreach entry $entries {
-		set name $entry(name)
+	try {
+		foreach entry $entries {
+			if {[$::packlim::sigmask pending term int]} {
+				throw error interrupted
+			}
 
-		# if the package is already installed, do nothing
-		if {[lsearch $installed $name] != -1} {
-			continue
+			set name $entry(name)
+
+			# if the package is already installed, do nothing
+			if {[lsearch $installed $name] != -1} {
+				continue
+			}
+
+			# install the package
+			packlim::install $entry $entry(path) $entry(trigger) $key
+
+			# append it to the list of installed packages
+			lappend installed $name
+		}
+	} on error {msg opts} {
+		packlim::cleanup
+		foreach path $paths {
+			file delete $path
 		}
 
-		# install the package
-		packlim::install $entry $entry(path) $entry(trigger) $key
-
-		# append it to the list of installed packages
-		lappend installed $name
+		throw error $msg
 	}
 }
 
@@ -283,6 +298,9 @@ proc ::packlim::update {repo} {
 	packlim::log info "updating the package list"
 	try {
 		curl get "$repo/available" ./var/packlim/available
+		if {[$::packlim::sigmask pending term int]} {
+			throw error interrupted
+		}
 	} on error {msg opts} {
 		file delete ./var/packlim/available
 		throw error "failed to download the package list"

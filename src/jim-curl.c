@@ -28,6 +28,7 @@
 #include <ifaddrs.h>
 #include <string.h>
 #include <errno.h>
+#include <signal.h>
 
 #include <jim.h>
 #include <jim-subcmd.h>
@@ -69,6 +70,7 @@ static int curl_cmd_get(Jim_Interp *interp,
                         int argc,
                         Jim_Obj *const *argv)
 {
+	sigset_t set, oldset, pend;
 	CURLM *cm;
 	CURL **cs;
 	FILE **fhs;
@@ -116,6 +118,12 @@ static int curl_cmd_get(Jim_Interp *interp,
 		}
 	}
 
+	if ((sigaddset(&set, SIGTERM) == -1) ||
+	    (sigaddset(&set, SIGINT) == -1) ||
+	    (sigprocmask(SIG_BLOCK, &set, &oldset) == -1)) {
+		goto cleanup_cm;
+	}
+
 	for (i = 0; n > i; ++i) {
 		fhs[i] = fopen(paths[i], "w");
 		if (NULL == fhs[i]) {
@@ -125,7 +133,7 @@ static int curl_cmd_get(Jim_Interp *interp,
 			}
 
 			Jim_SetResultFormatted(interp, "failed to open %s: %s", paths[i], strerror(errno));
-			goto cleanup_cm;
+			goto restore_sigmask;
 		}
 	}
 
@@ -165,6 +173,12 @@ static int curl_cmd_get(Jim_Interp *interp,
 	}
 
 	do {
+		if ((sigpending(&pend) == -1) ||
+		    (sigismember(&pend, SIGTERM)) ||
+		    (sigismember(&pend, SIGINT))) {
+			break;
+		}
+
 		m = curl_multi_perform(cm, &act);
 		if (CURLM_OK != m) {
 			Jim_SetResultString(interp, curl_multi_strerror(m), -1);
@@ -212,6 +226,9 @@ close_fhs:
 			unlink(paths[i]);
 		}
 	}
+
+restore_sigmask:
+	sigprocmask(SIG_SETMASK, &oldset, NULL);
 
 cleanup_cm:
 	curl_multi_cleanup(cm);

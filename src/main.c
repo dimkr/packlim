@@ -31,6 +31,7 @@
 
 extern int Jim_LockfLockCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
 extern int Jim_LockfTestCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
+extern int Jim_SigmaskCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
 extern int Jim_Ed25519VerifyCmd(Jim_Interp *interp,
                                 int argc,
                                 Jim_Obj *const *argv);
@@ -78,14 +79,8 @@ int main(int argc, char *argv[])
 	}
 
 	Jim_RegisterCoreCommands(jim);
-
-	if (JIM_OK != Jim_packlimInit(jim)) {
-		Jim_FreeInterp(jim);
-		curl_global_cleanup();
-		return EXIT_FAILURE;
-	}
-
 	Jim_InitStaticExtensions(jim);
+
 	Jim_CreateCommand(jim,
 	                  "lockf.lock",
 	                  Jim_LockfLockCmd,
@@ -94,6 +89,11 @@ int main(int argc, char *argv[])
 	Jim_CreateCommand(jim,
 	                  "lockf.locked",
 	                  Jim_LockfTestCmd,
+	                  NULL,
+	                  NULL);
+	Jim_CreateCommand(jim,
+	                  "sigmask",
+	                  Jim_SigmaskCmd,
 	                  NULL,
 	                  NULL);
 	Jim_CreateCommand(jim,
@@ -116,6 +116,12 @@ int main(int argc, char *argv[])
 	                  Jim_CurlCmd,
 	                  NULL,
 	                  NULL);
+
+	if (JIM_OK != Jim_packlimInit(jim)) {
+		Jim_FreeInterp(jim);
+		curl_global_cleanup();
+		return EXIT_FAILURE;
+	}
 
 	argv_obj = Jim_NewListObj(jim, NULL, 0);
 

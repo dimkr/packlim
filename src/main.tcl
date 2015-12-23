@@ -40,6 +40,7 @@ proc main {} {
 	}
 
 	set env [env]
+	set ::packlim::sigmask [sigmask term int]
 	file mkdir ./var/packlim ./var/packlim/installed
 
 	# wait for other instances to terminate
@@ -90,13 +91,8 @@ proc main {} {
 		set key [get_key]
 		set available [packlim::available $repo $key]
 
-		try {
-			foreach package [lrange $::argv 2 end] {
-				packlim::fetch $repo $package $available user $key
-			}
-		} on error {msg opts} {
-			packlim::cleanup
-			throw error $msg
+		foreach package [lrange $::argv 2 end] {
+			packlim::fetch $repo $package $available user $key
 		}
 	} remove {
 		if {$::argc < 3} {
