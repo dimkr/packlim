@@ -41,7 +41,7 @@ static int JimTarListFile(struct archive *in,
 {
 	Jim_ListAppendElement(interp,
 	                      (Jim_Obj *)arg,
-	                      Jim_NewStringObj(interp, path, -1));
+	                      Jim_NewStringObj(interp, &path[1], -1));
 
 	return JIM_OK;
 }
@@ -171,7 +171,7 @@ static int JimTarIterFiles(Jim_Obj *data_obj,
 			break;
 		}
 
-		if (JIM_OK != cb(in, out, interp, arg, &path[1])) {
+		if (cb(in, out, interp, arg, path) != JIM_OK) {
 			break;
 		}
 	} while (1);

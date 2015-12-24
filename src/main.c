@@ -55,11 +55,6 @@ int main(int argc, char *argv[])
 	int i;
 	int ret = EXIT_FAILURE;
 
-	if (geteuid() != 0) {
-		write(STDERR_FILENO, "Error: must run as root.\n", 25);
-		return EXIT_FAILURE;
-	}
-
 	pfix = getenv("PREFIX");
 	if (NULL == pfix) {
 		pfix = "/";

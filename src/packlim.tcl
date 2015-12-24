@@ -212,9 +212,9 @@ proc ::packlim::remove_force {name} {
 		# delete all files, in reverse order
 		foreach file $files {
 			try {
-				file delete $file
+				file delete .$file
 			} on error {msg opts} {
-				if {![file isdirectory $file]} {
+				if {![file isdirectory .$file]} {
 					throw error $msg
 				}
 			}
