@@ -1,6 +1,6 @@
 # this file is part of packlim.
 #
-# Copyright (c) 2015 Dima Krasner
+# Copyright (c) 2015, 2016 Dima Krasner
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,11 +22,11 @@
 
 package require packlim
 
-proc get_key {} {
-	set path ./etc/packlim/pub_key
+proc get_key {{type pub}} {
+	set path ./etc/packlim/${type}_key
 
 	if {![file exists $path]} {
-		packlim::log error "failed to read the public key"
+		packlim::log error "failed to read a digital signing key: $path"
 		exit 1
 	}
 
@@ -37,6 +37,26 @@ proc get_key {} {
 proc main {} {
 	if {$::argc < 2} {
 		usage "update|available|installed|install|remove|lock|source|purge \[ARG\]..."
+	}
+
+	# if no keys are present, generate a new pair
+	if {![file exists ./etc/packlim/pub_key] && ![file exists ./etc/packlim/priv_key]} {
+		set keys [ed25519.keypair]
+
+		try {
+			packlim::with_file fp ./etc/packlim/priv_key w {$fp puts -nonewline [lindex $keys 0]}
+		} on error {msg opts} {
+			file delete ./etc/packlim/priv_key
+			throw error $msg
+		}
+
+		try {
+			packlim::with_file fp ./etc/packlim/pub_key w {$fp puts -nonewline [lindex $keys 1]}
+		} on error {msg opts} {
+			file delete ./etc/packlim/priv_key
+			file delete ./etc/packlim/pub_key
+			throw error $msg
+		}
 	}
 
 	set env [env]
@@ -128,8 +148,17 @@ proc main {} {
 		}
 
 		packlim::purge
+	} package {
+		if {$::argc != 2} {
+			usage "package"
+		}
+
+		set priv [get_key priv]
+		set pub [get_key]
+
+		packlim::package  $priv $pub
 	} default {
-		usage "update|available|installed|install|remove|autoremove|lock|source|purge \[ARG\]..."
+		usage "update|available|installed|install|remove|autoremove|lock|source|purge|package \[ARG\]..."
 	}
 }
 

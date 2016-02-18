@@ -4,7 +4,7 @@
 \- a package manager
 .SH SYNOPSIS
 .B packlim
-{update | available | installed | install\ \fIname\fR... | remove\ \fIname\fR... | autoremove\ [\fIname\fR...] | lock\ \fIname\fR | source \fIscript\fR | purge}
+{update | available | installed | install\ \fIname\fR... | remove\ \fIname\fR... | autoremove\ [\fIname\fR...] | lock\ \fIname\fR | source \fIscript\fR | purge | package}
 .SH DESCRIPTION
 Manages software packages.
 .TP
@@ -34,10 +34,18 @@ Run a script.
 .TP
 .B purge
 Removes downloaded files.
+.TP
+.B package
+Reads a compressed
+.B tar(1)
+archive from standard input and writes a package to standard output.
 .SH FILES
 .TP
 .B /etc/packlim/pub_key
 The public key used to verify digital signatures.
+.TP
+.B /etc/packlim/priv_key
+The private key used to digitally sign packages.
 .TP
 .B /var/packlim/downloaded
 Downloaded packages.
@@ -54,7 +62,8 @@ The package repository URL.
 .TP
 .B PREFIX
 The package installation directory.
-.SH "SEE ALSO"
-.B dir2pkg(1)
+.SH NOTES
+.TP
+If both digital signing keys are missing, a new key pair is generated.
 .SH AUTHOR
 Dima Krasner (dima@dimakrasner.com)

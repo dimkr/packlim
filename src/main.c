@@ -1,7 +1,7 @@
 /*
  * this file is part of packlim.
  *
- * Copyright (c) 2015 Dima Krasner
+ * Copyright (c) 2015, 2016 Dima Krasner
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,12 @@ extern int Jim_SigmaskCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
 extern int Jim_Ed25519VerifyCmd(Jim_Interp *interp,
                                 int argc,
                                 Jim_Obj *const *argv);
+extern int Jim_Ed25519SignCmd(Jim_Interp *interp,
+                              int argc,
+                              Jim_Obj *const *argv);
+extern int Jim_Ed25519KeypairCmd(Jim_Interp *interp,
+                                 int argc,
+                                 Jim_Obj *const *argv);
 extern int Jim_TarListCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
 extern int Jim_TarExtractCmd(Jim_Interp *interp,
                              int argc,
@@ -94,6 +100,16 @@ int main(int argc, char *argv[])
 	Jim_CreateCommand(jim,
 	                  "ed25519.verify",
 	                  Jim_Ed25519VerifyCmd,
+	                  NULL,
+	                  NULL);
+	Jim_CreateCommand(jim,
+	                  "ed25519.sign",
+	                  Jim_Ed25519SignCmd,
+	                  NULL,
+	                  NULL);
+	Jim_CreateCommand(jim,
+	                  "ed25519.keypair",
+	                  Jim_Ed25519KeypairCmd,
 	                  NULL,
 	                  NULL);
 	Jim_CreateCommand(jim,

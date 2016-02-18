@@ -1,6 +1,6 @@
 # this file is part of packlim.
 #
-# Copyright (c) 2015 Dima Krasner
+# Copyright (c) 2015, 2016 Dima Krasner
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -378,6 +378,12 @@ proc ::packlim::purge {} {
 proc ::packlim::lock {name} {
 	packlim::log info "locking $name"
 	packlim::with_file fp "./var/packlim/installed/$name/trigger" w {$fp puts locked}
+}
+
+proc ::packlim::package {priv pub} {
+	set tar [stdin read]
+	set sig [ed25519.sign $tar $priv $pub]
+	puts -nonewline "${tar}hjkl${sig}"
 }
 
 proc usage {err} {
