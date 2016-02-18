@@ -13,7 +13,7 @@ CFLAGS += -std=gnu99 \
           -Wno-overlength-strings \
           -DVERSION=\"$(VERSION)\"
 
-LIBS += -ljim -led25519
+LIBS += -ljim
 
 CURL_CFLAGS = $(shell $(PKG_CONFIG) --cflags libcurl)
 CURL_LIBS = $(shell $(PKG_CONFIG) --libs libcurl)
@@ -21,7 +21,7 @@ CURL_LIBS = $(shell $(PKG_CONFIG) --libs libcurl)
 LIBARCHIVE_CFLAGS = $(shell $(PKG_CONFIG) --cflags libarchive)
 LIBARCHIVE_LIBS = $(shell $(PKG_CONFIG) --libs libarchive)
 
-SRCS = $(wildcard *.c)
+SRCS = $(wildcard *.c) $(wildcard ed25519/src/*.c)
 OBJECTS = $(SRCS:.c=.o)
 
 all: packlim

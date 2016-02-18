@@ -103,8 +103,18 @@ Dependencies
     - XZ (http://tukaani.org/xz/)
     - gzip (https://www.gnu.org/software/gzip/)
   - libcurl (http://curl.haxx.se/)
-  - Ed25519 (https://github.com/orlp/ed25519)
   - jimtcl (http://jim.tcl.tk/)
+
+Ed25519 (https://github.com/orlp/ed25519) is embedded into packlim's source code
+as a submodule.
+
+Building
+========
+
+  # git clone --recursive https://github.com/dimkr/packlim
+  # cd packlim
+  # make
+  # make install
 
 Hacking
 =======
