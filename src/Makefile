@@ -11,12 +11,12 @@ CFLAGS += -std=gnu99 \
           -Wall \
           -pedantic \
           -Wno-overlength-strings \
-          -DVERSION=\"$(VERSION)\" \
-          -I./jimtcl \
-          -I./ed25519/src
-LDFLAGS += -L./jimtcl
+          -DVERSION=\"$(VERSION)\"
 
-LIBS += -ljim
+JIMTCL_CFLAGS = -I./jimtcl
+JIMTCL_LIBS = -L./jimtcl -ljim
+
+ED25519_CFLAGS = -I./ed25519/src
 
 CURL_CFLAGS = $(shell $(PKG_CONFIG) --cflags libcurl)
 CURL_LIBS = $(shell $(PKG_CONFIG) --libs libcurl)
@@ -29,14 +29,20 @@ OBJECTS = $(SRCS:.c=.o)
 
 all: packlim
 
-jimtcl/libjim.a jimtcl/jim-config.h:
-	cd jimtcl; ./configure --with-ext="aio file glob package stdlib tclcompat namespace history" --without-ext=default; $(MAKE) libjim.a
+jimtcl/jim-config.h:
+	cd jimtcl; CC=$(CC) CFLAGS="$(CFLAGS)" ./configure --with-ext="aio file glob package stdlib tclcompat namespace history" --without-ext=default
+
+jimtcl/libjim.a: jimtcl/jim-config.h
+	cd jimtcl; $(MAKE) libjim.a
 
 jim-tar.o: jim-tar.c jimtcl/jim-config.h
-	$(CC) -c -o $@ $< $(CFLAGS) $(LIBARCHIVE_CFLAGS)
+	$(CC) -c -o $@ $< $(CFLAGS) $(JIMTCL_CFLAGS) $(LIBARCHIVE_CFLAGS)
 
 jim-curl.o: jim-curl.c jimtcl/jim-config.h
-	$(CC) -c -o $@ $< $(CFLAGS) $(CURL_CFLAGS)
+	$(CC) -c -o $@ $< $(CFLAGS) $(JIMTCL_CFLAGS) $(CURL_CFLAGS)
+
+jim-ed25519.o: jim-ed25519.c jimtcl/jim-config.h
+	$(CC) -c -o $@ $< $(CFLAGS) $(JIMTCL_CFLAGS) $(ED25519_CFLAGS)
 
 %.inc: %.tcl
 	sed -e s~'^\t*'~~g \
@@ -51,16 +57,16 @@ jim-curl.o: jim-curl.c jimtcl/jim-config.h
 	echo \"\" >> $@
 
 jim-packlim.o: jim-packlim.c packlim.inc jimtcl/jim-config.h
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) -c -o $@ $< $(CFLAGS) $(JIMTCL_CFLAGS)
 
 main.o: main.c main.inc jimtcl/jim-config.h
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) -c -o $@ $< $(CFLAGS) $(JIMTCL_CFLAGS)
 
 %.o: %.c jimtcl/jim-config.h
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) -c -o $@ $< $(CFLAGS) $(JIMTCL_CFLAGS)
 
 packlim: jimtcl/libjim.a $(OBJECTS)
-	$(CC) -o $@ $^ $(LDFLAGS) $(CURL_LIBS) $(LIBARCHIVE_LIBS) $(LIBS)
+	$(CC) -o $@ $^ $(LDFLAGS) $(CURL_LIBS) $(LIBARCHIVE_LIBS) $(JIMTCL_LIBS) $(LIBS)
 
 clean:
 	cd jimtcl; $(MAKE) clean
