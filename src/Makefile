@@ -12,6 +12,7 @@ CFLAGS += -std=gnu99 \
           -pedantic \
           -Wno-overlength-strings \
           -DVERSION=\"$(VERSION)\"
+LDFLAGS += -L./jimtcl
 
 LIBS += -ljim
 
@@ -25,6 +26,9 @@ SRCS = $(wildcard *.c) $(wildcard ed25519/src/*.c)
 OBJECTS = $(SRCS:.c=.o)
 
 all: packlim
+
+jimtcl/libjim.a:
+	cd jimtcl; ./configure --with-ext="aio file glob package stdlib tclcompat namespace" --without-ext=default; $(MAKE)
 
 jim-tar.o: jim-tar.c
 	$(CC) -c -o $@ $< $(CFLAGS) $(LIBARCHIVE_CFLAGS)
@@ -53,8 +57,9 @@ main.o: main.c main.inc
 %.o: %.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-packlim: $(OBJECTS)
+packlim: jimtcl/libjim.a $(OBJECTS)
 	$(CC) -o $@ $^ $(LDFLAGS) $(CURL_LIBS) $(LIBARCHIVE_LIBS) $(LIBS)
 
 clean:
+	cd jimtcl; $(MAKE) clean
 	rm -f packlim main.inc packlim.inc $(OBJECTS)

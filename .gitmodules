@@ -1,3 +1,6 @@
 [submodule "src/ed25519"]
 	path = src/ed25519
 	url = https://github.com/orlp/ed25519
+[submodule "src/jimtcl"]
+	path = src/jimtcl
+	url = https://github.com/msteveb/jimtcl
