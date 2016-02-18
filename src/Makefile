@@ -11,7 +11,8 @@ CFLAGS += -std=gnu99 \
           -Wall \
           -pedantic \
           -Wno-overlength-strings \
-          -DVERSION=\"$(VERSION)\"
+          -DVERSION=\"$(VERSION)\" \
+          -I./jimtcl
 LDFLAGS += -L./jimtcl
 
 LIBS += -ljim
