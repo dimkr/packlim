@@ -156,9 +156,15 @@ proc main {} {
 		set priv [get_key priv]
 		set pub [get_key]
 
-		packlim::package  $priv $pub
+		packlim::package $priv $pub
+	} shell {
+		if {$::argc != 2} {
+			usage "shell"
+		}
+
+		packlim::shell
 	} default {
-		usage "update|available|installed|install|remove|autoremove|lock|source|purge|package \[ARG\]..."
+		usage "update|available|installed|install|remove|autoremove|lock|source|shell|purge|package \[ARG\]..."
 	}
 }
 

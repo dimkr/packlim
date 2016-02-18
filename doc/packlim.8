@@ -4,7 +4,7 @@
 \- a package manager
 .SH SYNOPSIS
 .B packlim
-{update | available | installed | install\ \fIname\fR... | remove\ \fIname\fR... | autoremove\ [\fIname\fR...] | lock\ \fIname\fR | source \fIscript\fR | purge | package}
+{update | available | installed | install\ \fIname\fR... | remove\ \fIname\fR... | autoremove\ [\fIname\fR...] | lock\ \fIname\fR | source \fIscript\fR | shell | purge | package}
 .SH DESCRIPTION
 Manages software packages.
 .TP
@@ -31,6 +31,9 @@ Prevent a package from being removed.
 .TP
 .B source
 Run a script.
+.TP
+.B shell
+Runs an interactive scripting shell.
 .TP
 .B purge
 Removes downloaded files.

@@ -20,6 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+package require history
+
 proc ::packlim::log {level msg} {
 	switch -exact $level info {
 		set wrapped $msg
@@ -384,6 +386,50 @@ proc ::packlim::package {priv pub} {
 	set tar [stdin read]
 	set sig [ed25519.sign $tar $priv $pub]
 	puts -nonewline "${tar}hjkl${sig}"
+}
+
+proc ::packlim::shell {} {
+	packlim::log info "packlim interactive shell, version [info version]"
+	packlim::log info "Available commands: [join [info commands packlim::*] {, }]"
+
+	while {1} {
+		set cmd ""
+		set prompt "# "
+
+		while {1} {
+			if {[history getline $prompt chunk] < 0} {
+				exit 0
+			}
+			if {$cmd ne ""} {
+				append cmd \n
+			}
+
+			append cmd $chunk
+			if {[info complete $cmd]} {
+				break
+			}
+
+			set prompt ". "
+		}
+
+		if {[string length $cmd] > 1} {
+			history add $cmd
+		}
+
+		try {
+			set output [eval $cmd]
+		} on {error return break continue signal} {output opts} {
+			if {$output ne ""} {
+				puts "> [info returncodes $opts(-code)]:"
+			} else {
+				puts "> [info returncodes $opts(-code)]"
+			}
+		}
+
+		foreach line [split $output \n] {
+			puts ". $line"
+		}
+	}
 }
 
 proc usage {err} {

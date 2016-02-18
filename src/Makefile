@@ -28,7 +28,7 @@ OBJECTS = $(SRCS:.c=.o)
 all: packlim
 
 jimtcl/libjim.a:
-	cd jimtcl; ./configure --with-ext="aio file glob package stdlib tclcompat namespace" --without-ext=default; $(MAKE)
+	cd jimtcl; ./configure --with-ext="aio file glob package stdlib tclcompat namespace history" --without-ext=default; $(MAKE)
 
 jim-tar.o: jim-tar.c
 	$(CC) -c -o $@ $< $(CFLAGS) $(LIBARCHIVE_CFLAGS)
