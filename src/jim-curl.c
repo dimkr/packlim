@@ -165,7 +165,7 @@ static int curl_cmd_get(Jim_Interp *interp,
 	for (i = 0; n > i; ++i) {
 		if (CURLM_OK != curl_multi_add_handle(cm, cs[i])) {
 			for (--i; 0 <= i; --i) {
-				curl_multi_remove_handle(cm, cs[j]);
+				curl_multi_remove_handle(cm, cs[i]);
 			}
 
 			goto cleanup_cs;

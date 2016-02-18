@@ -12,7 +12,8 @@ CFLAGS += -std=gnu99 \
           -pedantic \
           -Wno-overlength-strings \
           -DVERSION=\"$(VERSION)\" \
-          -I./jimtcl
+          -I./jimtcl \
+          -I./ed25519/src
 LDFLAGS += -L./jimtcl
 
 LIBS += -ljim
@@ -28,13 +29,13 @@ OBJECTS = $(SRCS:.c=.o)
 
 all: packlim
 
-jimtcl/libjim.a:
-	cd jimtcl; ./configure --with-ext="aio file glob package stdlib tclcompat namespace history" --without-ext=default; $(MAKE)
+jimtcl/libjim.a jimtcl/jim-config.h:
+	cd jimtcl; ./configure --with-ext="aio file glob package stdlib tclcompat namespace history" --without-ext=default; $(MAKE) libjim.a
 
-jim-tar.o: jim-tar.c
+jim-tar.o: jim-tar.c jimtcl/jim-config.h
 	$(CC) -c -o $@ $< $(CFLAGS) $(LIBARCHIVE_CFLAGS)
 
-jim-curl.o: jim-curl.c
+jim-curl.o: jim-curl.c jimtcl/jim-config.h
 	$(CC) -c -o $@ $< $(CFLAGS) $(CURL_CFLAGS)
 
 %.inc: %.tcl
@@ -49,13 +50,13 @@ jim-curl.o: jim-curl.c
 	     -e '^"\\n" \\' > $@; \
 	echo \"\" >> $@
 
-jim-packlim.o: jim-packlim.c packlim.inc
+jim-packlim.o: jim-packlim.c packlim.inc jimtcl/jim-config.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-main.o: main.c main.inc
+main.o: main.c main.inc jimtcl/jim-config.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-%.o: %.c
+%.o: %.c jimtcl/jim-config.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 packlim: jimtcl/libjim.a $(OBJECTS)
