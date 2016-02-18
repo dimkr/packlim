@@ -102,7 +102,7 @@ int Jim_Ed25519KeypairCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	Jim_Obj *keys[2];
 
 	if (argc != 1) {
-		Jim_WrongNumArgs(interp, 0, argv, NULL);
+		Jim_WrongNumArgs(interp, 0, argv, "");
 		return JIM_ERR;
 	}
 
