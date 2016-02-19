@@ -58,23 +58,22 @@ int main(int argc, char *argv[])
 	const char *pfix;
 	Jim_Interp *jim;
 	Jim_Obj *argv_obj;
-	int i;
-	int ret = EXIT_FAILURE;
+	int i, ret = EXIT_FAILURE;
 
 	pfix = getenv("PREFIX");
-	if (NULL == pfix) {
+	if (!pfix) {
 		pfix = "/";
 	}
-	if (-1 == chdir(pfix)) {
+	if (chdir(pfix) == -1) {
 		return EXIT_FAILURE;
 	}
 
-	if (0 != curl_global_init(CURL_GLOBAL_NOTHING)) {
+	if (curl_global_init(CURL_GLOBAL_NOTHING) != 0) {
 		return EXIT_FAILURE;
 	}
 
 	jim = Jim_CreateInterp();
-	if (NULL == jim) {
+	if (!jim) {
 		curl_global_cleanup();
 		return EXIT_FAILURE;
 	}
@@ -128,7 +127,7 @@ int main(int argc, char *argv[])
 	                  NULL,
 	                  NULL);
 
-	if (JIM_OK != Jim_packlimInit(jim)) {
+	if (Jim_packlimInit(jim) != JIM_OK) {
 		Jim_FreeInterp(jim);
 		curl_global_cleanup();
 		return EXIT_FAILURE;
@@ -136,7 +135,7 @@ int main(int argc, char *argv[])
 
 	argv_obj = Jim_NewListObj(jim, NULL, 0);
 
-	for (i = 0; argc > i; ++i) {
+	for (i = 0; i < argc; ++i) {
 		Jim_ListAppendElement(jim,
 		                      argv_obj,
 		                      Jim_NewStringObj(jim, argv[i], -1));

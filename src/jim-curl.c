@@ -41,29 +41,29 @@
 static int JimCurlNetworkReachable(void)
 {
 	struct ifaddrs *ifap, *ifa;
-	int ret = JIM_ERR;
 
-	if (-1 == getifaddrs(&ifap))
-		goto end;
+	if (getifaddrs(&ifap) == -1) {
+		return JIM_ERR;
+	}
 
-	for (ifa = ifap; NULL != ifa; ifa = ifa->ifa_next) {
-		if (NULL == ifa->ifa_addr)
+	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
+		if (!ifa->ifa_addr) {
 			continue;
+		}
 
-		if (0 == strcmp("lo", ifa->ifa_name))
+		if (strcmp("lo", ifa->ifa_name) == 0) {
 			continue;
+		}
 
-		if ((AF_INET == ifa->ifa_addr->sa_family) ||
-		    (AF_INET6 == ifa->ifa_addr->sa_family)) {
-			ret = JIM_OK;
-			break;
+		if ((ifa->ifa_addr->sa_family == AF_INET) ||
+		    (ifa->ifa_addr->sa_family == AF_INET6)) {
+			freeifaddrs(ifap);
+			return JIM_OK;
 		}
 	}
 
 	freeifaddrs(ifap);
-
-end:
-	return ret;
+	return JIM_ERR;
 }
 
 static int curl_cmd_get(Jim_Interp *interp,
@@ -84,7 +84,7 @@ static int curl_cmd_get(Jim_Interp *interp,
 		return JIM_ERR;
 	}
 
-	if (JIM_OK != JimCurlNetworkReachable()) {
+	if (JimCurlNetworkReachable() != JIM_OK) {
 		Jim_SetResultString(interp, "network is unreachable", -1);
 		return JIM_ERR;
 	}
@@ -96,21 +96,21 @@ static int curl_cmd_get(Jim_Interp *interp,
 	paths = Jim_Alloc(n * sizeof(char *));
 
 	cm = curl_multi_init();
-	if (NULL == cm) {
+	if (!cm) {
 		goto free_arrs;
 	}
 
-	for (i = 0; argc > i; i += 2) {
+	for (i = 0; i < argc; i += 2) {
 		j = i / 2;
 
 		urls[j] = Jim_GetString(argv[i], &len);
-		if (0 == len) {
+		if (!len) {
 			Jim_SetResultString(interp, "a URL cannot be an empty string", -1);
 			goto cleanup_cm;
 		}
 
 		paths[j] = Jim_GetString(argv[1 + i], &len);
-		if (0 == len) {
+		if (!len) {
 			Jim_SetResultString(interp,
 			                    "a destination path cannot be an empty string",
 			                    -1);
@@ -124,7 +124,7 @@ static int curl_cmd_get(Jim_Interp *interp,
 		goto cleanup_cm;
 	}
 
-	for (i = 0; n > i; ++i) {
+	for (i = 0; i < n; ++i) {
 		fhs[i] = fopen(paths[i], "w");
 		if (NULL == fhs[i]) {
 			for (--i; 0 <= i; --i) {
@@ -137,10 +137,10 @@ static int curl_cmd_get(Jim_Interp *interp,
 		}
 	}
 
-	for (i = 0; n > i; ++i) {
+	for (i = 0; i < n; ++i) {
 		cs[i] = curl_easy_init();
-		if (NULL == cs[i]) {
-			for (--i; 0 <= i; --i) {
+		if (!cs[i]) {
+			for (--i; i >= 0; --i) {
 				curl_easy_cleanup(cs[i]);
 			}
 
@@ -148,23 +148,23 @@ static int curl_cmd_get(Jim_Interp *interp,
 		}
 	}
 
-	for (i = 0; n > i; ++i) {
-		if ((CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_FAILONERROR, 1)) ||
-		    (CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_TCP_NODELAY, 1)) ||
-		    (CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_USE_SSL, CURLUSESSL_TRY)) ||
-		    (CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_WRITEFUNCTION, fwrite)) ||
-		    (CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_WRITEDATA, fhs[i])) ||
-		    (CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_USERAGENT, USER_AGENT)) ||
-		    (CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_URL, urls[i])) ||
-		    (CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_CONNECTTIMEOUT, CONNECT_TIMEOUT)) ||
-		    (CURLE_OK != curl_easy_setopt(cs[i], CURLOPT_TIMEOUT, TIMEOUT))) {
+	for (i = 0; i < n; ++i) {
+		if ((curl_easy_setopt(cs[i], CURLOPT_FAILONERROR, 1) != CURLE_OK) ||
+		    (curl_easy_setopt(cs[i], CURLOPT_TCP_NODELAY, 1) != CURLE_OK) ||
+		    (curl_easy_setopt(cs[i], CURLOPT_USE_SSL, CURLUSESSL_TRY) != CURLE_OK) ||
+		    (curl_easy_setopt(cs[i], CURLOPT_WRITEFUNCTION, fwrite) != CURLE_OK) ||
+		    (curl_easy_setopt(cs[i], CURLOPT_WRITEDATA, fhs[i]) != CURLE_OK) ||
+		    (curl_easy_setopt(cs[i], CURLOPT_USERAGENT, USER_AGENT) != CURLE_OK) ||
+		    (curl_easy_setopt(cs[i], CURLOPT_URL, urls[i]) != CURLE_OK) ||
+		    (curl_easy_setopt(cs[i], CURLOPT_CONNECTTIMEOUT, CONNECT_TIMEOUT) != CURLE_OK) ||
+		    (curl_easy_setopt(cs[i], CURLOPT_TIMEOUT, TIMEOUT)) != CURLE_OK) {
 			goto cleanup_cs;
 		}
 	}
 
-	for (i = 0; n > i; ++i) {
-		if (CURLM_OK != curl_multi_add_handle(cm, cs[i])) {
-			for (--i; 0 <= i; --i) {
+	for (i = 0; i < n; ++i) {
+		if (curl_multi_add_handle(cm, cs[i]) != CURLM_OK) {
+			for (--i; i >= 0; --i) {
 				curl_multi_remove_handle(cm, cs[i]);
 			}
 
@@ -180,14 +180,14 @@ static int curl_cmd_get(Jim_Interp *interp,
 		}
 
 		m = curl_multi_perform(cm, &act);
-		if (CURLM_OK != m) {
+		if (m != CURLM_OK) {
 			Jim_SetResultString(interp, curl_multi_strerror(m), -1);
 			break;
 		}
-		if (0 == act) {
+		if (act == 0) {
 			info = curl_multi_info_read(cm, &q);
-			if ((NULL != info) && (CURLMSG_DONE == info->msg)) {
-				if (CURLE_OK == info->data.result) {
+			if (info && (info->msg == CURLMSG_DONE)) {
+				if (info->data.result == CURLE_OK) {
 					ret = JIM_OK;
 				}
 				else {
@@ -198,31 +198,31 @@ static int curl_cmd_get(Jim_Interp *interp,
 		}
 
 		m = curl_multi_wait(cm, NULL, 0, 1000, &nfds);
-		if (CURLM_OK != m) {
+		if (m != CURLM_OK) {
 			Jim_SetResultString(interp, curl_multi_strerror(m), -1);
 			break;
 		}
-		if (0 == nfds) {
+		if (!nfds) {
 			usleep(100000);
 		}
 	} while (1);
 
-	for (i = 0; n > i; ++i) {
+	for (i = 0; i < n; ++i) {
 		curl_multi_remove_handle(cm, cs[i]);
 	}
 
 cleanup_cs:
-	for (i = 0; n > i; ++i) {
+	for (i = 0; i < n; ++i) {
 		curl_easy_cleanup(cs[i]);
 	}
 
 close_fhs:
-	for (i = 0; n > i; ++i) {
+	for (i = 0; i < n; ++i) {
 		fclose(fhs[i]);
 	}
 
-	if (JIM_OK != ret) {
-		for (i = 0; n > i; ++i) {
+	if (ret != JIM_OK) {
+		for (i = 0; i < n; ++i) {
 			unlink(paths[i]);
 		}
 	}
