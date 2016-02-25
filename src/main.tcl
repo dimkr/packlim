@@ -23,7 +23,7 @@
 package require packlim
 
 proc get_key {{type pub}} {
-	set path ./etc/packlim/${type}_key
+	set path .@CONF_DIR@/packlim/${type}_key
 
 	if {![file exists $path]} {
 		packlim::log error "failed to read a digital signing key: $path"
@@ -40,21 +40,21 @@ proc main {} {
 	}
 
 	# if no keys are present, generate a new pair
-	if {![file exists ./etc/packlim/pub_key] && ![file exists ./etc/packlim/priv_key]} {
+	if {![file exists .@CONF_DIR@/packlim/pub_key] && ![file exists .@CONF_DIR@/packlim/priv_key]} {
 		set keys [ed25519.keypair]
 
 		try {
-			packlim::with_file fp ./etc/packlim/priv_key w {$fp puts -nonewline [lindex $keys 0]}
+			packlim::with_file fp .@CONF_DIR@/packlim/priv_key w {$fp puts -nonewline [lindex $keys 0]}
 		} on error {msg opts} {
-			file delete ./etc/packlim/priv_key
+			file delete .@CONF_DIR@/packlim/priv_key
 			throw error $msg
 		}
 
 		try {
-			packlim::with_file fp ./etc/packlim/pub_key w {$fp puts -nonewline [lindex $keys 1]}
+			packlim::with_file fp .@CONF_DIR@/packlim/pub_key w {$fp puts -nonewline [lindex $keys 1]}
 		} on error {msg opts} {
-			file delete ./etc/packlim/priv_key
-			file delete ./etc/packlim/pub_key
+			file delete .@CONF_DIR@/packlim/priv_key
+			file delete .@CONF_DIR@/packlim/pub_key
 			throw error $msg
 		}
 	}
