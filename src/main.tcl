@@ -36,7 +36,7 @@ proc get_key {{type pub}} {
 
 proc main {} {
 	if {$::argc < 2} {
-		usage "update|available|installed|install|remove|lock|source|purge \[ARG\]..."
+		usage "update|available|installed|install|remove|autoremove|lock|source|shell|purge|package \[ARG\]..."
 	}
 
 	# if no keys are present, generate a new pair
