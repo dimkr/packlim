@@ -4,7 +4,7 @@
 \- a package manager
 .SH SYNOPSIS
 .B packlim
-{update | available | installed | install\ \fIname\fR... | remove\ \fIname\fR... | autoremove\ [\fIname\fR...] | lock\ \fIname\fR | source \fIscript\fR | shell | purge | package}
+{update | available | installed | install\ \fIname\fR... | remove\ \fIname\fR... | autoremove\ [\fIname\fR...] | lock\ \fIname\fR | source \fIscript\fR | shell | purge | package | sign}
 .SH DESCRIPTION
 Manages software packages.
 .TP
@@ -42,6 +42,9 @@ Removes downloaded files.
 Reads a compressed
 .B tar(1)
 archive from standard input and writes a package to standard output.
+.B sign
+Read a file from standard input and write a digital signature to standard
+output.
 .SH FILES
 .TP
 .B /etc/packlim/pub_key

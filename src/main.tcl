@@ -36,7 +36,7 @@ proc get_key {{type pub}} {
 
 proc main {} {
 	if {$::argc < 2} {
-		usage "update|available|installed|install|remove|autoremove|lock|source|shell|purge|package \[ARG\]..."
+		usage "update|available|installed|install|remove|autoremove|lock|source|shell|purge|package|sign \[ARG\]..."
 	}
 
 	# if no keys are present, generate a new pair
@@ -157,6 +157,15 @@ proc main {} {
 		set pub [get_key]
 
 		packlim::package $priv $pub
+	} sign {
+		if {$::argc != 2} {
+			usage "sign"
+		}
+
+		set priv [get_key priv]
+		set pub [get_key]
+
+		puts -nonewline [ed25519.sign [stdin read] $priv $pub]
 	} shell {
 		if {$::argc != 2} {
 			usage "shell"
@@ -164,7 +173,7 @@ proc main {} {
 
 		packlim::shell
 	} default {
-		usage "update|available|installed|install|remove|autoremove|lock|source|shell|purge|package \[ARG\]..."
+		usage "update|available|installed|install|remove|autoremove|lock|source|shell|purge|package|sign \[ARG\]..."
 	}
 }
 
