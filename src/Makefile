@@ -54,7 +54,7 @@ OBJECTS = $(SRCS:.c=.o)
 all: packlim
 
 jimtcl/jim-config.h:
-	cd jimtcl; CC=$(CC) CFLAGS="$(CFLAGS)" ./configure --with-ext="aio file glob package stdlib tclcompat namespace history" --without-ext=default
+	cd jimtcl; CC=$(CC) CFLAGS="$(CFLAGS)" ./configure --with-ext="aio file glob package stdlib tclcompat namespace history clock" --without-ext=default
 
 jimtcl/libjim.a: jimtcl/jim-config.h
 	cd jimtcl; $(MAKE) libjim.a
