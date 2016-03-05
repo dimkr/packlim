@@ -61,13 +61,13 @@ proc main {} {
 
 	set env [env]
 	set ::packlim::sigmask [sigmask term int]
-	file mkdir .@CONF_DIR@/packlim .@CONF_DIR@/packlim/installed
+	file mkdir .@CONF_DIR@/packlim .@VAR_DIR@/packlim/installed
 
 	# wait for other instances to terminate
-	if {[lockf.locked .@CONF_DIR@/packlim/lock]} {
+	if {[lockf.locked .@VAR_DIR@/packlim/lock]} {
 		packlim::log warn "another instance is running; waiting"
 	}
-	set lock [lockf.lock .@CONF_DIR@/packlim/lock]
+	set lock [lockf.lock .@VAR_DIR@/packlim/lock]
 
 	switch -exact [lindex $::argv 1] update {
 		if {$::argc != 2} {
