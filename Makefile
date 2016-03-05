@@ -32,6 +32,7 @@ INSTALL = install -v
 
 all:
 	cd src; $(MAKE)
+	cd doc; $(MAKE)
 
 install: all
 	$(INSTALL) -D -m 755 src/packlim $(DESTDIR)/$(SBIN_DIR)/packlim
@@ -46,4 +47,5 @@ install: all
 	$(INSTALL) -m 644 src/jimtcl/LICENSE $(DESTDIR)/$(DOC_DIR)/packlim/LICENSE.jimtcl
 
 clean:
+	cd doc; $(MAKE) clean
 	cd src; $(MAKE) clean

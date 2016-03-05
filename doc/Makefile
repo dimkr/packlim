@@ -20,5 +20,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-CONF_DIR ?= /etc
-VAR_DIR ?= /var
+include ../Makefile.inc
+
+all: packlim.8
+
+%.8: %.8.in
+	sed -e s~'@CONF_DIR@'~$(CONF_DIR)~g \
+	    -e s~'@VAR_DIR@'~$(VAR_DIR)~g \
+	    $^ > $@
+
+clean:
+	rm -f packlim.8

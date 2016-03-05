@@ -75,6 +75,7 @@ jim-ed25519.o: jim-ed25519.c jimtcl/jim-config.h
 	    -e s~'^'~'"'~g \
 	    -e s~'$$'~'\\n" \\'~g \
 	    -e s~@CONF_DIR@~$(CONF_DIR)~g \
+	    -e s~@VAR_DIR@~$(VAR_DIR)~g \
 	    $^ | \
 	grep -v \
 	     -e ^\"\# \

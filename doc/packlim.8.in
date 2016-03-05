@@ -47,19 +47,19 @@ Read a file from standard input and write a digital signature to standard
 output.
 .SH FILES
 .TP
-.B /tmp/packlim/pub_key
+.B @CONF_DIR@/packlim/pub_key
 The public key used to verify digital signatures.
 .TP
-.B /tmp/packlim/priv_key
+.B @CONF_DIR@/packlim/priv_key
 The private key used to digitally sign packages.
 .TP
-.B /run/packlim/downloaded
+.B @VAR_DIR@/packlim/downloaded
 Downloaded packages.
 .TP
-.B /run/packlim/installed
+.B @VAR_DIR@/packlim/installed
 Installed packages.
 .TP
-.B /run/packlim/lock
+.B @VAR_DIR@/packlim/lock
 A lock file.
 .SH "ENVIRONMENT VARIABLES"
 .TP
