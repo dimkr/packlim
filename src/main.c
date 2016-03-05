@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 	Jim_Obj *argv_obj;
 	int i, ret = EXIT_FAILURE;
 
-	pfix = getenv("PREFIX");
+	pfix = getenv("PACKLIM_PREFIX");
 	if (!pfix) {
 		pfix = "/";
 	}

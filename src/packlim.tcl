@@ -439,8 +439,8 @@ proc usage {err} {
 
 proc get_repo {env} {
 	try {
-		return $env(REPO)
+		return $env(PACKLIM_REPO)
 	} on error {msg opts} {
-		throw error "REPO is not set"
+		throw error "PACKLIM_REPO is not set"
 	}
 }
